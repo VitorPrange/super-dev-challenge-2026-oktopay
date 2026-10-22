@@ -1,0 +1,538 @@
+<!doctype html>
+<!-- OKTOPAY · gastos.html
+     Gastos por categoria e resumo do dia (números de exemplo, spec seção 7). -->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="paleta-padrao" content="oceano">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <title>OKTOPAY · Gastos</title>
+  <script>
+    // aplica o tema antes de desenhar a página (evita "piscar")
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("oktopay-tema"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+      document.documentElement.dataset.paleta = "oceano";
+      try {
+        if (localStorage.getItem("oktopay-texto") === "grande") document.documentElement.dataset.texto = "grande";
+        if (localStorage.getItem("oktopay-mov") === "reduzido") document.documentElement.dataset.mov = "reduzido";
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.16 3.19M6.61 6.61A17.5 17.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M16 13h2"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3a9 9 0 0 1 6 6h-6z"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-beer" viewBox="0 0 24 24"><path d="M5 9h11v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M16 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M8.5 13v4M12.5 13v4"/><path d="M5 9c-1-2 .5-4 2.5-4 .8-1.4 3.2-1.4 4 0 2 0 3.500 2 2.500 4"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v4.5a2.5 2.5 0 0 0 5 0V3M7 11v10"/><path d="M17 21V3c-2.2 1.2-3 4-3 7h3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></symbol>
+  <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-bottle" viewBox="0 0 24 24"><path d="M10 2h4v4l2 3v12a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9l2-3z"/><path d="M8 13h8"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 9a2 2 0 0 0 0 6v3h18v-3a2 2 0 0 0 0-6V6H3z"/><path d="M13 6v12" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-bars" viewBox="0 0 24 24"><path d="M4 21V12M10 21V4M16 21V9M22 21H2"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.1-9-7.1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V5h16v2M12 5v14M9 19h6"/></symbol>
+  <symbol id="i-motion" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-limit" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+</svg>
+
+<header class="topo">
+  <div class="topo-in">
+    <a class="marca" href="index.html" aria-label="OKTOPAY, página inicial">
+      <div class="marca-logo"><img src="logo.svg" alt="" width="40" height="40"></div>
+      <div>OKTOPAY<small>Carteira do Oktober Karte</small></div>
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="index.html"><svg class="i"><use href="#i-wallet"/></svg><span>Carteira</span></a>
+      <a href="gastos.html" class="ativo"><svg class="i"><use href="#i-pie"/></svg><span>Gastos</span></a>
+      <a href="extrato.html"><svg class="i"><use href="#i-receipt"/></svg><span>Extrato</span></a>
+      <a href="assistente.html"><svg class="i"><use href="#i-sparkles"/></svg><span>Assistente</span></a>
+      <a href="premios.html"><svg class="i"><use href="#i-trophy"/></svg><span>Prêmios</span></a>
+      <a href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span>Painel</span></a>
+    </nav>
+    <div class="topo-acoes">
+      <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
+        <span class="avatar">VT</span>
+        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+      </button>
+      <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
+        <svg class="i"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<nav class="tabbar" aria-label="Navegação">
+  <a href="index.html"><svg class="i"><use href="#i-wallet"/></svg><span>Carteira</span></a>
+  <a href="gastos.html" class="ativo"><svg class="i"><use href="#i-pie"/></svg><span>Gastos</span></a>
+  <a href="extrato.html"><svg class="i"><use href="#i-receipt"/></svg><span>Extrato</span></a>
+  <a href="assistente.html"><svg class="i"><use href="#i-sparkles"/></svg><span>Assistente</span></a>
+  <a href="premios.html"><svg class="i"><use href="#i-trophy"/></svg><span>Prêmios</span></a>
+</nav>
+<div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
+<aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
+  <div class="gv-topo">
+    <span class="avatar">VT</span>
+    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="gv-corpo">
+    <section class="gv-sec" aria-labelledby="gv-h1">
+      <h3 id="gv-h1">Aparência</h3>
+      <div class="seg" id="seg-tema" role="radiogroup" aria-label="Tema">
+        <button type="button" role="radio" data-tema="light"><svg class="i p"><use href="#i-sun"/></svg>Claro</button>
+        <button type="button" role="radio" data-tema="dark"><svg class="i p"><use href="#i-moon"/></svg>Escuro</button>
+        <button type="button" role="radio" data-tema="auto"><svg class="i p"><use href="#i-auto"/></svg>Automático</button>
+      </div>
+      <div class="gv-card" style="margin-top:12px">
+        <div class="gv-linha"><svg class="i"><use href="#i-text"/></svg><span class="tx">Texto maior<small>Aumenta o conteúdo das telas</small></span><button class="sw" id="sw-texto" type="button" role="switch" aria-checked="false" aria-label="Texto maior"></button></div>
+        <div class="gv-linha"><svg class="i"><use href="#i-motion"/></svg><span class="tx">Reduzir animações<small>Menos movimento nas telas</small></span><button class="sw" id="sw-mov" type="button" role="switch" aria-checked="false" aria-label="Reduzir animações"></button></div>
+      </div>
+    </section>
+    <section class="gv-sec" aria-labelledby="gv-h2">
+      <h3 id="gv-h2">Conta e segurança</h3>
+      <div class="gv-card">
+        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Limite diário de gastos"><svg class="i"><use href="#i-limit"/></svg><span class="tx">Limite diário de gastos<small>Receba um aviso ao chegar perto</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Bloquear cartão"><svg class="i"><use href="#i-lock"/></svg><span class="tx">Bloquear cartão<small>Bloqueio temporário e imediato</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+      </div>
+    </section>
+    <section class="gv-sec" aria-labelledby="gv-h3">
+      <h3 id="gv-h3">Mais</h3>
+      <div class="gv-card">
+        <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
+        <button class="gv-linha" type="button" data-breve="Ajuda e suporte"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+      </div>
+    </section>
+  </div>
+</aside>
+
+<main class="pagina estreita">
+  <p class="aviso-fixo"><svg class="i"><use href="#i-shield"/></svg>Apoio à decisão. Números calculados pelo banco, nunca pelo modelo.</p>
+
+  <div class="grade unico">
+    <div class="col">
+      <section class="cartao" id="gastos" aria-labelledby="t-cat">
+        <div class="gc-topo">
+          <span class="gc-logo"><svg class="i g"><use href="#i-bars"/></svg></span>
+          <div class="gc-tit">
+            <h2 id="t-cat">Gastos por categoria</h2>
+            <p class="sub" id="sub-gastos">Sábado · total R$ 532,00</p>
+          </div>
+          <div class="periodo" id="periodo">
+            <button class="periodo-btn" id="periodo-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="periodo-lista">
+              <span class="periodo-ico"><svg class="i"><use href="#i-calendar"/></svg></span>
+              <span id="periodo-rot">Sábado</span>
+              <svg class="i seta-p"><use href="#i-chev-d"/></svg>
+            </button>
+            <ul class="periodo-lista" id="periodo-lista" role="listbox" aria-label="Período" hidden></ul>
+          </div>
+        </div>
+        <ul class="gcat">
+          <li class="gc" style="--cor:var(--cat1); --fg:var(--fg1); --p:33.31%">
+            <span class="gc-ico"><svg class="i g"><use href="#i-beer"/></svg></span>
+            <div class="gc-meio">
+              <div class="gc-linha"><span class="gc-nome">Bebidas alcoólicas</span><b class="gc-val">R$ 177,20</b><span class="gc-pct">33,31%</span></div>
+              <div class="barra"><i></i></div>
+            </div>
+          </li>
+          <li class="gc" style="--cor:var(--cat2); --fg:var(--fg2); --p:29.10%">
+            <span class="gc-ico"><svg class="i g"><use href="#i-bag"/></svg></span>
+            <div class="gc-meio">
+              <div class="gc-linha"><span class="gc-nome">Acessórios</span><b class="gc-val">R$ 154,80</b><span class="gc-pct">29,10%</span></div>
+              <div class="barra"><i></i></div>
+            </div>
+          </li>
+          <li class="gc" style="--cor:var(--cat3); --fg:var(--fg3); --p:21.80%">
+            <span class="gc-ico"><svg class="i g"><use href="#i-food"/></svg></span>
+            <div class="gc-meio">
+              <div class="gc-linha"><span class="gc-nome">Comida</span><b class="gc-val">R$ 116,00</b><span class="gc-pct">21,80%</span></div>
+              <div class="barra"><i></i></div>
+            </div>
+          </li>
+          <li class="gc" style="--cor:var(--cat4); --fg:var(--fg4); --p:9.21%">
+            <span class="gc-ico"><svg class="i g"><use href="#i-bottle"/></svg></span>
+            <div class="gc-meio">
+              <div class="gc-linha"><span class="gc-nome">Bebidas não alcoólicas</span><b class="gc-val">R$ 49,00</b><span class="gc-pct">9,21%</span></div>
+              <div class="barra"><i></i></div>
+            </div>
+          </li>
+          <li class="gc" style="--cor:var(--cat5); --fg:var(--fg5); --p:6.58%">
+            <span class="gc-ico"><svg class="i g"><use href="#i-ticket"/></svg></span>
+            <div class="gc-meio">
+              <div class="gc-linha"><span class="gc-nome">Brinquedos</span><b class="gc-val">R$ 35,00</b><span class="gc-pct">6,58%</span></div>
+              <div class="barra"><i></i></div>
+            </div>
+          </li>
+        </ul>
+        <div class="gc-rodape">
+          <div><svg class="i g"><use href="#i-wallet"/></svg><span><small>Média por compra</small><b id="gc-media">R$ 33,25</b></span></div>
+          <div><svg class="i g"><use href="#i-cart"/></svg><span><small>Quantidade de compras</small><b id="gc-qtd">16</b></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
+</main>
+
+<script>
+  /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
+  // Mais recente primeiro. v = valor em reais.
+  const TRANSACOES = [
+    { h: "18:55", tipo: "compra", nome: "Bar Spaten", v: 31.90 },
+    { h: "18:30", tipo: "compra", nome: "Empório Oktober", v: 19.90 },
+    { h: "17:50", tipo: "compra", nome: "Brinquedoteca Galegão", v: 35.00 },
+    { h: "17:15", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
+    { h: "17:05", tipo: "estorno", nome: "Estorno · Brinquedoteca Galegão", v: 25.00 },
+    { h: "16:40", tipo: "compra", nome: "Bar Spaten", v: 56.70 },
+    { h: "16:05", tipo: "compra", nome: "Brinquedoteca Galegão", v: 25.00, estornada: true },
+    { h: "15:50", tipo: "saque", nome: "Saque", v: 50.00 },
+    { h: "15:25", tipo: "compra", nome: "Cantina do Setor 2", v: 38.00 },
+    { h: "15:10", tipo: "compra", nome: "Barraca do Setor 4", v: 21.00 },
+    { h: "14:35", tipo: "compra", nome: "Bar Spaten", v: 28.90 },
+    { h: "14:20", tipo: "recarga", nome: "Recarga PIX", v: 200.00 },
+    { h: "13:30", tipo: "compra", nome: "Empório Oktober", v: 89.90 },
+    { h: "12:45", tipo: "compra", nome: "Cantina do Festzelt", v: 14.00 },
+    { h: "12:20", tipo: "compra", nome: "Barraca do Setor 4", v: 20.00 },
+    { h: "11:50", tipo: "compra", nome: "Bar Spaten", v: 21.90 },
+    { h: "11:10", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
+    { h: "10:35", tipo: "compra", nome: "Barraca do Setor 4", v: 8.00 },
+    { h: "10:20", tipo: "compra", nome: "Bar Spaten", v: 37.80 },
+    { h: "10:05", tipo: "compra", nome: "Empório Oktober", v: 45.00 },
+    { h: "09:40", tipo: "recarga", nome: "Recarga PIX", v: 500.00 },
+  ];
+
+  /* ============ regras do programa de pontos (fictício) ============ */
+  const PTS_POR_REAIS = 5;          // 1 ponto a cada R$ 5,00 gastos (por compra, arredondado para baixo)
+  const RECARGA_MIN = 50;           // recarga PIX mínima para pontuar
+  const RECARGA_PTS = 20;           // pontos por recarga PIX válida
+  const NIVEIS = [
+    { nome: "Bronze", min: 0 }, { nome: "Prata", min: 500 },
+    { nome: "Ouro", min: 2500 }, { nome: "Diamante", min: 10000 },
+  ];
+
+  function pontosDe(t) {
+    if (t.tipo === "compra") return Math.floor(t.v / PTS_POR_REAIS);
+    if (t.tipo === "recarga") return t.v >= RECARGA_MIN ? RECARGA_PTS : 0;
+    if (t.tipo === "estorno") return -Math.floor(t.v / PTS_POR_REAIS);
+    return 0; // saque não pontua
+  }
+  const PONTOS = TRANSACOES.reduce((s, t) => s + pontosDe(t), 0);
+  const nivelAtual = [...NIVEIS].reverse().find((n) => PONTOS >= n.min);
+  const proxNivel = NIVEIS.find((n) => n.min > PONTOS);
+
+  /* ============ utilitários ============ */
+  const brl = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const num = (n) => n.toLocaleString("pt-BR");
+
+  function icone(id, cls) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "i" + (cls ? " " + cls : ""));
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#i-" + id);
+    svg.appendChild(use);
+    return svg;
+  }
+  function el(tag, cls, texto) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (texto != null) e.textContent = texto;
+    return e;
+  }
+  function iconeDe(t) {
+    if (t.tipo === "recarga") return ["zap", "recarga"];
+    if (t.tipo === "saque") return ["cash", "saque"];
+    if (t.tipo === "estorno") return ["undo", "estorno"];
+    if (/Bar|Barraca/.test(t.nome)) return ["beer", "compra"];
+    if (/Cantina/.test(t.nome)) return ["food", "compra"];
+    if (/Brinquedoteca/.test(t.nome)) return ["star", "compra"];
+    return ["gift", "compra"];
+  }
+  function tipoTexto(t) {
+    return { compra: "compra", recarga: "recarga", saque: "saque", estorno: "estorno" }[t.tipo];
+  }
+
+  /* ============ menu lateral: tema, paleta, texto, animações ============ */
+  (function () {
+    const root = document.documentElement;
+    const gav = document.getElementById("gaveta");
+    const fundo = document.getElementById("gaveta-fundo");
+    const abrirBtn = document.getElementById("menu-btn");
+    if (!gav || !abrirBtn) return;
+    const ler = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const guardar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+
+    /* aviso rápido (toast) */
+    let tAviso;
+    function aviso(txt) {
+      let a = document.getElementById("aviso-g");
+      if (!a) { a = document.createElement("div"); a.id = "aviso-g"; a.className = "aviso-g"; a.setAttribute("role", "status"); document.body.appendChild(a); }
+      a.textContent = txt; a.classList.add("on");
+      clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove("on"), 2600);
+    }
+
+    /* abrir e fechar */
+    function abrir(v) {
+      abrirBtn.setAttribute("aria-expanded", String(v));
+      if (v) {
+        gav.hidden = false; fundo.hidden = false;
+        requestAnimationFrame(() => { gav.classList.add("aberta"); fundo.classList.add("aberta"); });
+        document.body.classList.add("sem-rolagem");
+        gav.querySelector(".gv-fechar").focus();
+      } else {
+        gav.classList.remove("aberta"); fundo.classList.remove("aberta");
+        document.body.classList.remove("sem-rolagem");
+        setTimeout(() => { if (!gav.classList.contains("aberta")) { gav.hidden = true; fundo.hidden = true; } }, 240);
+        abrirBtn.focus();
+      }
+    }
+    abrirBtn.addEventListener("click", () => abrir(true));
+    const perfil = document.getElementById("perfil-btn");
+    if (perfil) perfil.addEventListener("click", () => abrir(true));
+    gav.querySelector(".gv-fechar").addEventListener("click", () => abrir(false));
+    fundo.addEventListener("click", () => abrir(false));
+    document.addEventListener("keydown", (e) => {
+      if (gav.hidden) return;
+      if (e.key === "Escape") { abrir(false); return; }
+      if (e.key === "Tab") {
+        const f = [...gav.querySelectorAll("button, a[href]")].filter((x) => x.offsetParent !== null);
+        const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    });
+
+    /* tema: claro, escuro ou automático (segue o aparelho) */
+    const segs = [...gav.querySelectorAll("[data-tema]")];
+    const efetivo = (m) => m === "auto" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : m;
+    function marcarTema() {
+      const m = ler("oktopay-tema");
+      const atual = m === "dark" || m === "light" ? m : "auto";
+      segs.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.tema === atual)));
+    }
+    segs.forEach((b) => b.addEventListener("click", () => {
+      const m = b.dataset.tema;
+      guardar("oktopay-tema", m === "auto" ? null : m);
+      root.dataset.theme = efetivo(m);
+      marcarTema();
+    }));
+    marcarTema();
+
+    /* chaves: texto maior e reduzir animações */
+    function chave(id, k, valor, attr) {
+      const sw = document.getElementById(id);
+      sw.setAttribute("aria-checked", String(ler(k) === valor));
+      sw.addEventListener("click", () => {
+        const on = sw.getAttribute("aria-checked") !== "true";
+        sw.setAttribute("aria-checked", String(on));
+        guardar(k, on ? valor : null);
+        if (on) root.dataset[attr] = valor; else delete root.dataset[attr];
+      });
+    }
+    chave("sw-texto", "oktopay-texto", "grande", "texto");
+    chave("sw-mov", "oktopay-mov", "reduzido", "mov");
+
+    /* itens ainda não disponíveis nesta demonstração */
+    gav.querySelectorAll("[data-breve]").forEach((b) => b.addEventListener("click", () => aviso(b.dataset.breve + ": em breve nesta demonstração.")));
+
+  })();
+
+  /* ============ paginador (botões grandes + deslizar para o lado) ============ */
+  function paginar({ itens, porPagina = 5, lista, area, pager, desenhar }) {
+    const btnA = pager.querySelector('[data-dir="-1"]');
+    const btnP = pager.querySelector('[data-dir="1"]');
+    const atual = pager.querySelector(".pg-info b");
+    const tot = pager.querySelector(".pg-total");
+    const dots = pager.querySelector(".pg-dots");
+    let pag = 0;
+
+    const total = () => Math.max(1, Math.ceil(itens.length / porPagina));
+
+    function render(dir) {
+      const n = total();
+      pag = Math.min(Math.max(pag, 0), n - 1);
+      lista.replaceChildren(...itens.slice(pag * porPagina, (pag + 1) * porPagina).map(desenhar));
+      atual.textContent = pag + 1;
+      tot.textContent = n;
+      btnA.disabled = pag === 0;
+      btnP.disabled = pag === n - 1;
+      pager.hidden = n === 1;
+      dots.replaceChildren(...(n <= 8 ? Array.from({ length: n }, (_, i) => el("i", i === pag ? "on" : "")) : []));
+      if (dir) {
+        area.classList.remove("t-prox", "t-ant");
+        void area.offsetWidth; // reinicia a animação
+        area.classList.add(dir > 0 ? "t-prox" : "t-ant");
+      }
+    }
+    function ir(d) {
+      const novo = pag + d;
+      if (novo < 0 || novo >= total()) return;
+      pag = novo;
+      render(d);
+    }
+    btnA.addEventListener("click", () => ir(-1));
+    btnP.addEventListener("click", () => ir(1));
+
+    // deslizar para o lado: esquerda = próxima, direita = anterior
+    area.classList.add("lista-pag", "area-pag");
+    let x0 = 0, y0 = 0;
+    area.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+    area.addEventListener("touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) ir(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    render(0);
+    return { atualizar(novos) { itens = novos; pag = 0; render(0); } };
+  }
+
+
+  /* ============ cards que recolhem e expandem (saldo e pontos) ============ */
+  document.querySelectorAll("[data-colapsavel]").forEach((card) => {
+    const btn = card.querySelector(".seta");
+    const topo = card.querySelector(".saldo-topo");
+    const chave = "oktopay-col-" + card.dataset.colapsavel + "-m";
+    const pc = () => matchMedia("(min-width: 900px)").matches;
+    function aplicar(col, salvar) {
+      card.classList.toggle("colapsado", col);
+      btn.setAttribute("aria-expanded", String(!col));
+      btn.setAttribute("aria-label", (col ? "Expandir " : "Recolher ") + (card.dataset.colapsavel === "saldo" ? "saldo" : "pontos"));
+      if (salvar) { try { localStorage.setItem(chave, col ? "1" : "0"); } catch (e) {} }
+    }
+    // primeira visita: começa recolhido no celular e aberto no computador; depois lembra a escolha
+    let inicial = matchMedia("(max-width: 759px)").matches;
+    try { const v = localStorage.getItem(chave); if (v !== null) inicial = v === "1"; } catch (e) {}
+    aplicar(inicial, false);
+    topo.addEventListener("click", () => { if (!pc()) aplicar(!card.classList.contains("colapsado"), true); });
+  });
+
+  /* ---------- período: menu próprio + dados simulados por dia ---------- */
+  /* No exemplo da spec só existem "hoje" e "sabado" (mesmo dia simulado); os demais dias são só para demonstrar a interface. */
+  const CATS = [
+    { n: "Bebidas alcoólicas", i: "beer" }, { n: "Acessórios", i: "bag" }, { n: "Comida", i: "food" },
+    { n: "Bebidas não alcoólicas", i: "bottle" }, { n: "Brinquedos", i: "ticket" },
+  ];
+  const DIA = {
+    sabado:  { rot: "Sábado",  v: [177.2, 154.8, 116, 49, 35], q: 16, est: [1, 25] },
+    sexta:   { rot: "Sexta",   v: [84.5, 61, 92.4, 31, 18],   q: 9,  est: [0, 0] },
+    quinta:  { rot: "Quinta",  v: [42, 38, 55.5, 22, 12],     q: 6,  est: [0, 0] },
+    domingo: { rot: "Domingo", v: [60, 48, 70.5, 26, 10],     q: 8,  est: [1, 12] },
+  };
+  DIA.hoje = Object.assign({}, DIA.sabado, { rot: "Hoje" });
+  DIA.semana = { rot: "Últimos 7 dias", v: CATS.map((_, k) => ["sabado", "sexta", "quinta", "domingo"].reduce((s, d) => s + DIA[d].v[k], 0)),
+                 q: 39, est: [2, 37] };
+  const GRUPOS = [["Atalhos", ["hoje", "semana"]], ["Dias do festival", ["sabado", "sexta", "domingo", "quinta"]]];
+  const soma = (d) => d.v.reduce((a, b) => a + b, 0);
+  const pct = (x) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+
+  const btnP = document.getElementById("periodo-btn");
+  const listaP = document.getElementById("periodo-lista");
+  let atualP = "sabado";
+
+  function desenharDia(k) {
+    const d = DIA[k], total = soma(d);
+    document.getElementById("periodo-rot").textContent = d.rot;
+    document.getElementById("sub-gastos").textContent = d.rot + " · total " + brl(total);
+    const ul = document.querySelector(".gcat");
+    ul.replaceChildren();
+    d.v.map((v, idx) => ({ v, idx })).sort((a, b) => b.v - a.v).forEach(({ v, idx }) => {
+      const li = document.createElement("li");
+      li.className = "gc";
+      li.style.cssText = "--cor:var(--cat" + (idx + 1) + "); --fg:var(--fg" + (idx + 1) + "); --p:" + (v / total * 100).toFixed(2) + "%";
+      li.innerHTML = '<span class="gc-ico"><svg class="i g"><use href="#i-' + CATS[idx].i + '"/></svg></span>' +
+        '<div class="gc-meio"><div class="gc-linha"><span class="gc-nome"></span><b class="gc-val"></b><span class="gc-pct"></span></div><div class="barra"><i></i></div></div>';
+      li.querySelector(".gc-nome").textContent = CATS[idx].n;
+      li.querySelector(".gc-val").textContent = brl(v);
+      li.querySelector(".gc-pct").textContent = pct(v / total * 100);
+      ul.appendChild(li);
+    });
+    document.getElementById("gc-media").textContent = brl(total / d.q);
+    document.getElementById("gc-qtd").textContent = d.q;
+  }
+
+  function montarLista() {
+    listaP.replaceChildren();
+    GRUPOS.forEach(([titulo, ids]) => {
+      const g = document.createElement("li"); g.className = "grupo"; g.setAttribute("role", "presentation"); g.textContent = titulo;
+      listaP.appendChild(g);
+      ids.forEach((id) => {
+        const o = document.createElement("li");
+        o.setAttribute("role", "option"); o.tabIndex = -1; o.dataset.v = id;
+        o.setAttribute("aria-selected", String(id === atualP));
+        o.innerHTML = '<svg class="i"><use href="#i-check"/></svg><span></span><small></small>';
+        o.children[1].textContent = DIA[id].rot;
+        o.children[2].textContent = brl(soma(DIA[id]));
+        o.addEventListener("click", () => escolher(id));
+        listaP.appendChild(o);
+      });
+    });
+  }
+  function abrirP(v, focar) {
+    /* no celular a lista vira folha fixa: sai do card (que tem animação) para o <body> */
+    const cel = matchMedia("(max-width: 759px)").matches;
+    if (v && cel) document.body.appendChild(listaP);
+    else if (listaP.parentNode !== btnP.parentNode) btnP.parentNode.appendChild(listaP);
+    listaP.hidden = !v; btnP.setAttribute("aria-expanded", String(v));
+    if (v && focar) (listaP.querySelector('[aria-selected="true"]') || listaP.querySelector("[role=option]")).focus();
+  }
+  function escolher(id) {
+    atualP = id; desenharDia(id); montarLista(); abrirP(false); btnP.focus();
+  }
+  btnP.addEventListener("click", (e) => { e.stopPropagation(); abrirP(listaP.hidden, true); });
+  btnP.addEventListener("keydown", (e) => { if (e.key === "ArrowDown") { e.preventDefault(); abrirP(true, true); } });
+  document.addEventListener("click", (e) => { if (!listaP.hidden && !listaP.contains(e.target)) abrirP(false); });
+  listaP.addEventListener("keydown", (e) => {
+    const ops = [...listaP.querySelectorAll("[role=option]")], i = ops.indexOf(document.activeElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); ops[(i + 1) % ops.length].focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); ops[(i - 1 + ops.length) % ops.length].focus(); }
+    else if (e.key === "Home") { e.preventDefault(); ops[0].focus(); }
+    else if (e.key === "End") { e.preventDefault(); ops[ops.length - 1].focus(); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (i >= 0) escolher(ops[i].dataset.v); }
+    else if (e.key === "Escape") { e.preventDefault(); abrirP(false); btnP.focus(); }
+    else if (e.key === "Tab") abrirP(false);
+  });
+  montarLista(); desenharDia(atualP);
+
+</script>
+</body>
+</html>

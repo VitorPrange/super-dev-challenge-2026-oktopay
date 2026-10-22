@@ -1,0 +1,413 @@
+<!doctype html>
+<!-- OKTOPAY · publicar/painel.html
+     Implementa: SPEC_DO_AGENTE.md seção 3 (Ação: o agente prepara, uma pessoa decide) e seção 6 (aprovação só no painel, com senha). -->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="paleta-padrao" content="oceano">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <title>OKTOPAY · Painel de aprovação</title>
+  <script>
+    // aplica o tema antes de desenhar a página (evita "piscar")
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("oktopay-tema"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+      document.documentElement.dataset.paleta = "oceano";
+      try {
+        if (localStorage.getItem("oktopay-texto") === "grande") document.documentElement.dataset.texto = "grande";
+        if (localStorage.getItem("oktopay-mov") === "reduzido") document.documentElement.dataset.mov = "reduzido";
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M9.9 4.24A9.1 9.1 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.16 3.19M6.61 6.61A17.5 17.5 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5"/><path d="M16 13h2"/></symbol>
+  <symbol id="i-pie" viewBox="0 0 24 24"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3a9 9 0 0 1 6 6h-6z"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+  <symbol id="i-beer" viewBox="0 0 24 24"><path d="M5 9h11v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M16 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M8.5 13v4M12.5 13v4"/><path d="M5 9c-1-2 .5-4 2.5-4 .8-1.4 3.2-1.4 4 0 2 0 3.500 2 2.500 4"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v8M4.5 3v4.5a2.5 2.5 0 0 0 5 0V3M7 11v10"/><path d="M17 21V3c-2.2 1.2-3 4-3 7h3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></symbol>
+  <symbol id="i-chev-d" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l1 13H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-bottle" viewBox="0 0 24 24"><path d="M10 2h4v4l2 3v12a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9l2-3z"/><path d="M8 13h8"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 9a2 2 0 0 0 0 6v3h18v-3a2 2 0 0 0 0-6V6H3z"/><path d="M13 6v12" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-bars" viewBox="0 0 24 24"><path d="M4 21V12M10 21V4M16 21V9M22 21H2"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-3.9-4-7.1-9-7.1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V5h16v2M12 5v14M9 19h6"/></symbol>
+  <symbol id="i-motion" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-limit" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+</svg>
+
+<header class="topo">
+  <div class="topo-in">
+    <a class="marca" href="index.html" aria-label="OKTOPAY, página inicial">
+      <div class="marca-logo"><img src="logo.svg" alt="" width="40" height="40"></div>
+      <div>OKTOPAY<small>Carteira do Oktober Karte</small></div>
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="index.html"><svg class="i"><use href="#i-wallet"/></svg><span>Carteira</span></a>
+      <a href="gastos.html"><svg class="i"><use href="#i-pie"/></svg><span>Gastos</span></a>
+      <a href="extrato.html"><svg class="i"><use href="#i-receipt"/></svg><span>Extrato</span></a>
+      <a href="assistente.html"><svg class="i"><use href="#i-sparkles"/></svg><span>Assistente</span></a>
+      <a href="premios.html"><svg class="i"><use href="#i-trophy"/></svg><span>Prêmios</span></a>
+      <a href="painel.html" class="ativo"><svg class="i"><use href="#i-grid"/></svg><span>Painel</span></a>
+    </nav>
+    <div class="topo-acoes">
+      <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
+        <span class="avatar">VT</span>
+        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+      </button>
+      <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
+        <svg class="i"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<nav class="tabbar" aria-label="Navegação">
+  <a href="index.html"><svg class="i"><use href="#i-wallet"/></svg><span>Carteira</span></a>
+  <a href="gastos.html"><svg class="i"><use href="#i-pie"/></svg><span>Gastos</span></a>
+  <a href="extrato.html"><svg class="i"><use href="#i-receipt"/></svg><span>Extrato</span></a>
+  <a href="assistente.html"><svg class="i"><use href="#i-sparkles"/></svg><span>Assistente</span></a>
+  <a href="premios.html"><svg class="i"><use href="#i-trophy"/></svg><span>Prêmios</span></a>
+</nav>
+<div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
+<aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
+  <div class="gv-topo">
+    <span class="avatar">VT</span>
+    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="gv-corpo">
+    <section class="gv-sec" aria-labelledby="gv-h1">
+      <h3 id="gv-h1">Aparência</h3>
+      <div class="seg" id="seg-tema" role="radiogroup" aria-label="Tema">
+        <button type="button" role="radio" data-tema="light"><svg class="i p"><use href="#i-sun"/></svg>Claro</button>
+        <button type="button" role="radio" data-tema="dark"><svg class="i p"><use href="#i-moon"/></svg>Escuro</button>
+        <button type="button" role="radio" data-tema="auto"><svg class="i p"><use href="#i-auto"/></svg>Automático</button>
+      </div>
+      <div class="gv-card" style="margin-top:12px">
+        <div class="gv-linha"><svg class="i"><use href="#i-text"/></svg><span class="tx">Texto maior<small>Aumenta o conteúdo das telas</small></span><button class="sw" id="sw-texto" type="button" role="switch" aria-checked="false" aria-label="Texto maior"></button></div>
+        <div class="gv-linha"><svg class="i"><use href="#i-motion"/></svg><span class="tx">Reduzir animações<small>Menos movimento nas telas</small></span><button class="sw" id="sw-mov" type="button" role="switch" aria-checked="false" aria-label="Reduzir animações"></button></div>
+      </div>
+    </section>
+    <section class="gv-sec" aria-labelledby="gv-h2">
+      <h3 id="gv-h2">Conta e segurança</h3>
+      <div class="gv-card">
+        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Limite diário de gastos"><svg class="i"><use href="#i-limit"/></svg><span class="tx">Limite diário de gastos<small>Receba um aviso ao chegar perto</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Bloquear cartão"><svg class="i"><use href="#i-lock"/></svg><span class="tx">Bloquear cartão<small>Bloqueio temporário e imediato</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+      </div>
+    </section>
+    <section class="gv-sec" aria-labelledby="gv-h3">
+      <h3 id="gv-h3">Mais</h3>
+      <div class="gv-card">
+        <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
+        <button class="gv-linha" type="button" data-breve="Ajuda e suporte"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+      </div>
+    </section>
+  </div>
+</aside>
+
+<main class="pagina">
+
+  <p class="aviso-fixo"><svg class="i"><use href="#i-shield"/></svg>Nada é movimentado até você aprovar. Aprovar um rascunho executa o pedido; recusar descarta.</p>
+
+  <div class="painel-grade">
+
+    <div class="col">
+      <section class="cartao" aria-labelledby="t-acesso">
+        <h2 id="t-acesso"><svg class="i"><use href="#i-shield"/></svg>Acesso</h2>
+        <p class="sub">Digite a senha do painel. Ela vai só no cabeçalho da requisição, nunca fica salva na página.</p>
+        <form class="login" id="login" autocomplete="off">
+          <input type="password" id="senha" placeholder="Senha do painel" aria-label="Senha do painel" required>
+          <button class="btn" type="submit"><svg class="i p"><use href="#i-check"/></svg>Entrar</button>
+        </form>
+        <p class="vazio" id="msg-login" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="cartao" aria-labelledby="t-rasc">
+        <div class="rasc-topo">
+          <h2 id="t-rasc"><svg class="i"><use href="#i-receipt"/></svg>Rascunhos aguardando aprovação</h2>
+          <button class="btn fantasma" type="button" id="atualizar" disabled>Atualizar</button>
+        </div>
+        <div class="lista-rasc" id="lista-rasc">
+          <p class="vazio">Entre com a senha para ver os rascunhos.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="cartao" aria-labelledby="t-exec">
+        <h2 id="t-exec"><svg class="i"><use href="#i-sparkles"/></svg>Últimas execuções do agente</h2>
+        <div class="rolagem">
+          <table class="tabela-exec">
+            <thead><tr><th>Quando</th><th>Pergunta</th><th>Passos</th><th>Duração</th></tr></thead>
+            <tbody id="corpo-exec">
+              <tr><td colspan="4" class="vazio">Sem dados ainda.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
+</main>
+
+<script>
+  // Troque pelo código do seu projeto e pelo nome da função do painel.
+  const PAINEL_URL = "https://CODIGO.supabase.co/functions/v1/NOME-DA-FUNCAO-PAINEL";
+
+  const el = (tag, cls, t) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = t; return e; };
+  /* ============ menu lateral: tema, paleta, texto, animações ============ */
+  (function () {
+    const root = document.documentElement;
+    const gav = document.getElementById("gaveta");
+    const fundo = document.getElementById("gaveta-fundo");
+    const abrirBtn = document.getElementById("menu-btn");
+    if (!gav || !abrirBtn) return;
+    const ler = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const guardar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+
+    /* aviso rápido (toast) */
+    let tAviso;
+    function aviso(txt) {
+      let a = document.getElementById("aviso-g");
+      if (!a) { a = document.createElement("div"); a.id = "aviso-g"; a.className = "aviso-g"; a.setAttribute("role", "status"); document.body.appendChild(a); }
+      a.textContent = txt; a.classList.add("on");
+      clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove("on"), 2600);
+    }
+
+    /* abrir e fechar */
+    function abrir(v) {
+      abrirBtn.setAttribute("aria-expanded", String(v));
+      if (v) {
+        gav.hidden = false; fundo.hidden = false;
+        requestAnimationFrame(() => { gav.classList.add("aberta"); fundo.classList.add("aberta"); });
+        document.body.classList.add("sem-rolagem");
+        gav.querySelector(".gv-fechar").focus();
+      } else {
+        gav.classList.remove("aberta"); fundo.classList.remove("aberta");
+        document.body.classList.remove("sem-rolagem");
+        setTimeout(() => { if (!gav.classList.contains("aberta")) { gav.hidden = true; fundo.hidden = true; } }, 240);
+        abrirBtn.focus();
+      }
+    }
+    abrirBtn.addEventListener("click", () => abrir(true));
+    const perfil = document.getElementById("perfil-btn");
+    if (perfil) perfil.addEventListener("click", () => abrir(true));
+    gav.querySelector(".gv-fechar").addEventListener("click", () => abrir(false));
+    fundo.addEventListener("click", () => abrir(false));
+    document.addEventListener("keydown", (e) => {
+      if (gav.hidden) return;
+      if (e.key === "Escape") { abrir(false); return; }
+      if (e.key === "Tab") {
+        const f = [...gav.querySelectorAll("button, a[href]")].filter((x) => x.offsetParent !== null);
+        const i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    });
+
+    /* tema: claro, escuro ou automático (segue o aparelho) */
+    const segs = [...gav.querySelectorAll("[data-tema]")];
+    const efetivo = (m) => m === "auto" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : m;
+    function marcarTema() {
+      const m = ler("oktopay-tema");
+      const atual = m === "dark" || m === "light" ? m : "auto";
+      segs.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.tema === atual)));
+    }
+    segs.forEach((b) => b.addEventListener("click", () => {
+      const m = b.dataset.tema;
+      guardar("oktopay-tema", m === "auto" ? null : m);
+      root.dataset.theme = efetivo(m);
+      marcarTema();
+    }));
+    marcarTema();
+
+    /* chaves: texto maior e reduzir animações */
+    function chave(id, k, valor, attr) {
+      const sw = document.getElementById(id);
+      sw.setAttribute("aria-checked", String(ler(k) === valor));
+      sw.addEventListener("click", () => {
+        const on = sw.getAttribute("aria-checked") !== "true";
+        sw.setAttribute("aria-checked", String(on));
+        guardar(k, on ? valor : null);
+        if (on) root.dataset[attr] = valor; else delete root.dataset[attr];
+      });
+    }
+    chave("sw-texto", "oktopay-texto", "grande", "texto");
+    chave("sw-mov", "oktopay-mov", "reduzido", "mov");
+
+    /* itens ainda não disponíveis nesta demonstração */
+    gav.querySelectorAll("[data-breve]").forEach((b) => b.addEventListener("click", () => aviso(b.dataset.breve + ": em breve nesta demonstração.")));
+
+  })();
+
+
+  const loginForm = document.getElementById("login");
+  const senhaEl = document.getElementById("senha");
+  const msgLogin = document.getElementById("msg-login");
+  const listaEl = document.getElementById("lista-rasc");
+  const corpoExec = document.getElementById("corpo-exec");
+  const btnAtualizar = document.getElementById("atualizar");
+
+  let senha = ""; // só em memória
+
+  const brl = (n) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const quando = (iso) => new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+  async function chamar(metodo, corpo) {
+    const r = await fetch(PAINEL_URL, {
+      method: metodo,
+      headers: { "Content-Type": "application/json", "x-painel-senha": senha },
+      body: corpo ? JSON.stringify(corpo) : undefined,
+    });
+    const dados = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? "Senha incorreta." : (dados.erro || dados.error || "Erro " + r.status));
+    return dados;
+  }
+
+  function texto(tag, cls, t) {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    el.textContent = t;
+    return el;
+  }
+
+  function desenharRascunhos(lista) {
+    listaEl.replaceChildren();
+    if (!lista || !lista.length) {
+      listaEl.appendChild(texto("p", "vazio", "Nenhum rascunho no momento."));
+      return;
+    }
+    lista.forEach((r) => {
+      const card = document.createElement("article");
+      card.className = "rasc";
+
+      const topo = document.createElement("div");
+      topo.className = "rasc-topo";
+      topo.append(texto("span", "tipo", r.tipo), texto("span", "valor", brl(r.valor)));
+
+      const selo = texto("span", "selo " + r.status, r.status.replace("_", " "));
+
+      card.append(topo, selo);
+      card.appendChild(texto("p", "just", r.justificativa || "Sem justificativa."));
+      card.appendChild(texto("p", "ev", "Evidências: " + JSON.stringify(r.evidencias || []) + " · criado em " + quando(r.criado_em)));
+
+      if (r.status === "aguardando_aprovacao") {
+        const botoes = document.createElement("div");
+        botoes.className = "botoes";
+        const ok = texto("button", "btn ok", "Aprovar");
+        const no = texto("button", "btn perigo", "Recusar");
+        ok.type = no.type = "button";
+        ok.addEventListener("click", () => decidir(r.id, "aprovado", [ok, no]));
+        no.addEventListener("click", () => decidir(r.id, "recusado", [ok, no]));
+        botoes.append(ok, no);
+        card.appendChild(botoes);
+      }
+      listaEl.appendChild(card);
+    });
+  }
+
+  function desenharExecucoes(lista) {
+    corpoExec.replaceChildren();
+    if (!lista || !lista.length) {
+      const tr = document.createElement("tr");
+      const td = texto("td", "vazio", "Sem execuções ainda.");
+      td.colSpan = 4;
+      tr.appendChild(td);
+      corpoExec.appendChild(tr);
+      return;
+    }
+    lista.forEach((e) => {
+      const tr = document.createElement("tr");
+      const n = Array.isArray(e.passos) ? e.passos.length : 0;
+      tr.append(
+        texto("td", "", quando(e.criado_em)),
+        texto("td", "", e.pergunta),
+        texto("td", "", String(n)),
+        texto("td", "", e.duracao_ms != null ? (e.duracao_ms / 1000).toFixed(1) + " s" : "—")
+      );
+      corpoExec.appendChild(tr);
+    });
+  }
+
+  async function carregar() {
+    const dados = await chamar("GET");
+    desenharRascunhos(dados.rascunhos);
+    desenharExecucoes(dados.execucoes);
+  }
+
+  async function decidir(id, status, botoes) {
+    botoes.forEach((b) => (b.disabled = true));
+    try {
+      await chamar("POST", { id, status });
+      await carregar();
+    } catch (err) {
+      msgLogin.textContent = err.message;
+      botoes.forEach((b) => (b.disabled = false));
+    }
+  }
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msgLogin.textContent = "";
+    if (PAINEL_URL.includes("CODIGO")) {
+      msgLogin.textContent = "Falta configurar PAINEL_URL no painel.html.";
+      return;
+    }
+    senha = senhaEl.value;
+    try {
+      await carregar();
+      btnAtualizar.disabled = false;
+      msgLogin.textContent = "Conectado.";
+    } catch (err) {
+      senha = "";
+      msgLogin.textContent = err.message || "Não foi possível acessar a função do painel.";
+    }
+  });
+
+  btnAtualizar.addEventListener("click", () => carregar().catch((e) => (msgLogin.textContent = e.message)));
+</script>
+</body>
+</html>
