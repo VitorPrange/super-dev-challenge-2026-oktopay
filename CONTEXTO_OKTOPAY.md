@@ -45,7 +45,7 @@ Observação: o sistema de entrega embute uma etiqueta C2PA no `logo.svg` (≈8 
 
 **Navegação**: navbar superior (Carteira, Gastos, Extrato, Assistente, Prêmios, Painel) no PC; barra inferior de 5 itens no celular (sem Painel). Topo: logo, nome, botão de **menu hambúrguer** no canto direito (clicar no nome também abre). Sem traços/listras na navbar.
 
-**Menu lateral** (painel/folha): tema Claro/Escuro/Automático; Texto maior (zoom 1,12 no conteúdo); Reduzir animações; itens "em breve" (Meu perfil, Limite diário, Bloquear cartão, Notificações, Ajuda, Sair); link para o Painel. Preferências em localStorage: `oktopay-tema`, `oktopay-texto`, `oktopay-mov`.
+**Menu lateral** (painel/folha): tema Claro/Escuro/Automático; Texto maior (zoom 1,12 no conteúdo); Reduzir animações; itens "em breve" (Meu perfil, Notificações, Sair); "Ajuda e suporte" abre o assistente (`assistente.html?q=Preciso de ajuda`); link para o Painel. Preferências em localStorage: `oktopay-tema`, `oktopay-texto`, `oktopay-mov`.
 
 **Carteira**: saldo com ícone de olho ao lado do valor (mascara `.sens` como "R$ ••••", `oktopay-oculto`); setinha recolhe/expande (só no celular; no PC fica sempre aberto); chip de pontos; Recarregar/Sacar levam ao assistente. PC: grade com saldo + "Seus pontos", 4 atalhos, "Últimos lançamentos" e "Gastos por categoria".
 
@@ -85,7 +85,7 @@ Observação: o sistema de entrega embute uma etiqueta C2PA no `logo.svg` (≈8 
 ## 8. Pendências e ideias
 
 - Preencher `FUNCTION_URL`, `PAINEL_URL`, `TOKEN_DO_VISITANTE`.
-- Implementar de verdade os itens "em breve" do menu (perfil, limite diário, bloquear cartão, notificações, ajuda, sair).
+- Implementar de verdade os itens "em breve" do menu (perfil, notificações, sair).
 - Sugestões feitas e não implementadas: ocultar saldo por padrão, PIN/biometria para resgate, confirmar antes de resgatar, modo mão esquerda, idioma (alemão), escolha de notificações.
 - A última mudança (regra global de remover destaque/contorno) foi salva sem novo teste automatizado; se algum lugar ainda mostrar destaque azul, anotar tela e elemento.
 - Spec do agente só prevê `hoje | sabado` como período; os demais dias do seletor são visuais.
