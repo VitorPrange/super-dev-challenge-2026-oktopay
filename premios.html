@@ -299,7 +299,19 @@
     if (t.tipo === "estorno") return -Math.floor(t.v / PTS_POR_REAIS);
     return 0; // saque não pontua
   }
-  const PONTOS = TRANSACOES.reduce((s, t) => s + pontosDe(t), 0);
+  const PONTOS_BRUTOS = TRANSACOES.reduce((s, t) => s + pontosDe(t), 0);
+  let pontosResgatados = 0;
+  try {
+    const sessaoPontos = await OKTO.sessao();
+    if (sessaoPontos) {
+      const respostaPontos = await fetch(OKTO.FN + "resgatar-premio", {
+        headers: { apikey: OKTO.SUPABASE_PUBLISHABLE_KEY, Authorization: "Bearer " + sessaoPontos.access_token }
+      });
+      const dadosPontos = await respostaPontos.json().catch(() => ({}));
+      if (respostaPontos.ok) pontosResgatados = Number(dadosPontos.pontos_resgatados || 0);
+    }
+  } catch (err) { console.error("Não foi possível carregar os pontos resgatados.", err); }
+  const PONTOS = PONTOS_BRUTOS - pontosResgatados;
   const nivelAtual = [...NIVEIS].reverse().find((n) => PONTOS >= n.min);
   const proxNivel = NIVEIS.find((n) => n.min > PONTOS);
 
