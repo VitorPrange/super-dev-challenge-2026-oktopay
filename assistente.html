@@ -22,6 +22,8 @@
       } catch (e) {}
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,8 +92,8 @@
     </nav>
     <div class="topo-acoes">
       <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
-        <span class="avatar">VT</span>
-        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+        <span class="avatar">…</span>
+        <span class="perfil-txt">Carregando…<small>•••• ••••</small></span>
       </button>
       <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
         <svg class="i"><use href="#i-menu"/></svg>
@@ -109,8 +111,8 @@
 <div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
 <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
   <div class="gv-topo">
-    <span class="avatar">VT</span>
-    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <span class="avatar">…</span>
+    <div><b>Carregando…</b><small>Cartão •••• ••••</small></div>
     <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
   </div>
   <div class="gv-corpo">
@@ -129,8 +131,8 @@
     <section class="gv-sec" aria-labelledby="gv-h2">
       <h3 id="gv-h2">Conta e segurança</h3>
       <div class="gv-card">
-        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
-        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Seus dados e seu cartão</small></span></button>
+        <button class="gv-linha" type="button" id="gv-notif"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span></button>
       </div>
     </section>
     <section class="gv-sec" aria-labelledby="gv-h3">
@@ -138,7 +140,7 @@
       <div class="gv-card">
         <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
         <a class="gv-linha" href="assistente.html?q=Preciso%20de%20ajuda"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte<small>Fale com o assistente OKTOPAY</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
-        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-sair"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span></button>
       </div>
     </section>
   </div>
@@ -167,7 +169,6 @@
   <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   // ===== CONFIGURE AQUI (2 valores) =====
   // Supabase > Project Settings > API: "Project URL" e a chave PUBLISHABLE (pode ficar no front).
@@ -176,35 +177,9 @@
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lhOJBOCStuNW5v1UT2XbDw__4uHlO6W";
   const FUNCTION_URL = SUPABASE_URL + "/functions/v1/agente";
   // Cliente do Supabase: cuida do login e renova a sessão sozinho.
-  const sb = (window.supabase && !SUPABASE_URL.includes("CODIGO"))
-    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
-    : null;
+  const sb = OKTO.sb; // o mesmo cliente (e a mesma sessão) das outras telas
 
-  /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
-  // Mais recente primeiro. v = valor em reais.
-  const TRANSACOES = [
-    { h: "18:55", tipo: "compra", nome: "Bar Spaten", v: 31.90 },
-    { h: "18:30", tipo: "compra", nome: "Empório Oktober", v: 19.90 },
-    { h: "17:50", tipo: "compra", nome: "Brinquedoteca Galegão", v: 35.00 },
-    { h: "17:15", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "17:05", tipo: "estorno", nome: "Estorno · Brinquedoteca Galegão", v: 25.00 },
-    { h: "16:40", tipo: "compra", nome: "Bar Spaten", v: 56.70 },
-    { h: "16:05", tipo: "compra", nome: "Brinquedoteca Galegão", v: 25.00, estornada: true },
-    { h: "15:50", tipo: "saque", nome: "Saque", v: 50.00 },
-    { h: "15:25", tipo: "compra", nome: "Cantina do Setor 2", v: 38.00 },
-    { h: "15:10", tipo: "compra", nome: "Barraca do Setor 4", v: 21.00 },
-    { h: "14:35", tipo: "compra", nome: "Bar Spaten", v: 28.90 },
-    { h: "14:20", tipo: "recarga", nome: "Recarga PIX", v: 200.00 },
-    { h: "13:30", tipo: "compra", nome: "Empório Oktober", v: 89.90 },
-    { h: "12:45", tipo: "compra", nome: "Cantina do Festzelt", v: 14.00 },
-    { h: "12:20", tipo: "compra", nome: "Barraca do Setor 4", v: 20.00 },
-    { h: "11:50", tipo: "compra", nome: "Bar Spaten", v: 21.90 },
-    { h: "11:10", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "10:35", tipo: "compra", nome: "Barraca do Setor 4", v: 8.00 },
-    { h: "10:20", tipo: "compra", nome: "Bar Spaten", v: 37.80 },
-    { h: "10:05", tipo: "compra", nome: "Empório Oktober", v: 45.00 },
-    { h: "09:40", tipo: "recarga", nome: "Recarga PIX", v: 500.00 },
-  ];
+  const TRANSACOES = []; // sem uso nesta tela; os dados reais vêm da Edge Function "agente"
 
   /* ============ regras do programa de pontos (fictício) ============ */
   const PTS_POR_REAIS = 5;          // 1 ponto a cada R$ 5,00 gastos (por compra, arredondado para baixo)

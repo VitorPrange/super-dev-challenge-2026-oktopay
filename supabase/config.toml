@@ -423,3 +423,6 @@ verify_jwt = true     # só entra quem está logado (o site manda o token da ses
 
 [functions.painel]
 verify_jwt = false    # o painel não faz login no Supabase; a senha é conferida dentro da função
+
+[functions.carteira]
+verify_jwt = true     # só entra quem está logado; devolve os dados do usuário do token

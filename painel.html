@@ -22,6 +22,9 @@
       } catch (e) {}
     })();
   </script>
+  <meta name="okto-guard" content="soft">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,8 +93,8 @@
     </nav>
     <div class="topo-acoes">
       <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
-        <span class="avatar">VT</span>
-        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+        <span class="avatar">…</span>
+        <span class="perfil-txt">Carregando…<small>•••• ••••</small></span>
       </button>
       <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
         <svg class="i"><use href="#i-menu"/></svg>
@@ -109,8 +112,8 @@
 <div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
 <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
   <div class="gv-topo">
-    <span class="avatar">VT</span>
-    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <span class="avatar">…</span>
+    <div><b>Carregando…</b><small>Cartão •••• ••••</small></div>
     <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
   </div>
   <div class="gv-corpo">
@@ -129,8 +132,8 @@
     <section class="gv-sec" aria-labelledby="gv-h2">
       <h3 id="gv-h2">Conta e segurança</h3>
       <div class="gv-card">
-        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
-        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Seus dados e seu cartão</small></span></button>
+        <button class="gv-linha" type="button" id="gv-notif"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span></button>
       </div>
     </section>
     <section class="gv-sec" aria-labelledby="gv-h3">
@@ -138,7 +141,7 @@
       <div class="gv-card">
         <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
         <a class="gv-linha" href="assistente.html?q=Preciso%20de%20ajuda"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte<small>Fale com o assistente OKTOPAY</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
-        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-sair"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span></button>
       </div>
     </section>
   </div>
@@ -153,7 +156,7 @@
     <div class="col">
       <section class="cartao" aria-labelledby="t-acesso">
         <h2 id="t-acesso"><svg class="i"><use href="#i-shield"/></svg>Acesso</h2>
-        <p class="sub">Digite a senha do painel. Ela vai só no cabeçalho da requisição, nunca fica salva na página.</p>
+        <p class="sub">Digite a senha do painel. Ela vai só no cabeçalho da requisição e fica guardada apenas nesta aba, até você sair da conta.</p>
         <form class="login" id="login" autocomplete="off">
           <input type="password" id="senha" placeholder="Senha do painel" aria-label="Senha do painel" required>
           <button class="btn" type="submit"><svg class="i p"><use href="#i-check"/></svg>Entrar</button>
@@ -399,11 +402,21 @@
       await carregar();
       btnAtualizar.disabled = false;
       msgLogin.textContent = "Conectado.";
+      try { sessionStorage.setItem(OKTO.CHAVE_PAINEL, senha); } catch (e) {} // as notificações do menu usam isto
     } catch (err) {
       senha = "";
       msgLogin.textContent = err.message || "Não foi possível acessar a função do painel.";
     }
   });
+
+  // se a pessoa já entrou no painel nesta aba, reconecta sozinho
+  (function () {
+    let g = null; try { g = sessionStorage.getItem(OKTO.CHAVE_PAINEL); } catch (e) {}
+    if (!g) return;
+    senha = g;
+    carregar().then(() => { btnAtualizar.disabled = false; msgLogin.textContent = "Conectado."; })
+      .catch(() => { senha = ""; try { sessionStorage.removeItem(OKTO.CHAVE_PAINEL); } catch (e) {} });
+  })();
 
   btnAtualizar.addEventListener("click", () => carregar().catch((e) => (msgLogin.textContent = e.message)));
 </script>

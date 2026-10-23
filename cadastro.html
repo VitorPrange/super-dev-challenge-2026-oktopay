@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="okto-guard" content="off">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <title>OKTOPAY · Cadastro</title>
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("oktopay-tema"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+      document.documentElement.dataset.paleta = "oceano";
+      try {
+        if (localStorage.getItem("oktopay-texto") === "grande") document.documentElement.dataset.texto = "grande";
+        if (localStorage.getItem("oktopay-mov") === "reduzido") document.documentElement.dataset.mov = "reduzido";
+      } catch (e) {}
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="auth">
+  <section class="cartao auth-card" aria-labelledby="t-auth">
+    <div class="auth-marca"><img src="logo.svg" alt="" width="44" height="44"><span>OKTOPAY</span></div>
+    <h2 id="t-auth">Criar conta</h2>
+    <p class="sub">Você ganha um cartão OKTOPAY assim que se cadastrar.</p>
+    <form id="form" novalidate>
+      <label class="campo">Nome<input type="text" id="nome" autocomplete="name" required maxlength="80" placeholder="Seu nome"></label>
+      <label class="campo">E-mail<input type="email" id="email" autocomplete="username" required placeholder="voce@email.com"></label>
+      <label class="campo">Senha<input type="password" id="senha" autocomplete="new-password" required minlength="6" placeholder="Mínimo de 6 caracteres"></label>
+      <label class="campo">Confirmar senha<input type="password" id="senha2" autocomplete="new-password" required placeholder="Repita a senha"></label>
+      <p class="auth-msg" id="msg" role="alert" aria-live="polite"></p>
+      <button class="btn" type="submit" id="btn">Cadastrar</button>
+    </form>
+    <p class="auth-troca">Já tem conta? <a href="login.html">Entrar</a></p>
+  </section>
+</main>
+<script>
+  const msg = document.getElementById("msg"), btn = document.getElementById("btn");
+  OKTO.sessao().then((s) => { if (s) location.replace("index.html"); });
+
+  function mostrar(t, cls) { msg.className = "auth-msg " + (cls || ""); msg.textContent = t; }
+
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById("nome").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const senha = document.getElementById("senha").value;
+    if (!nome) return mostrar("Informe seu nome.", "erro");
+    if (!email) return mostrar("Informe seu e-mail.", "erro");
+    if (senha.length < 6) return mostrar("A senha precisa ter pelo menos 6 caracteres.", "erro");
+    if (senha !== document.getElementById("senha2").value) return mostrar("As senhas não são iguais.", "erro");
+
+    btn.disabled = true; mostrar("Cadastrando…");
+    const { data, error } = await OKTO.sb.auth.signUp({ email, password: senha, options: { data: { nome } } });
+    if (error) {
+      btn.disabled = false;
+      mostrar(/already registered|already been registered/i.test(error.message) ? "Este e-mail já está cadastrado. Use \"Entrar\"." : "Não foi possível cadastrar: " + error.message, "erro");
+      return;
+    }
+    // e-mail já existente (com confirmação ligada, o Supabase devolve um usuário sem identidades)
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      btn.disabled = false; mostrar("Este e-mail já está cadastrado. Use \"Entrar\".", "erro"); return;
+    }
+    if (data.session) { location.replace("index.html"); return; }
+    mostrar("Cadastro feito! Confirme seu e-mail (caixa de entrada) e depois entre.", "ok");
+  });
+</script>
+</body>
+</html>

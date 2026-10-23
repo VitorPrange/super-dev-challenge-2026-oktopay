@@ -22,6 +22,8 @@
       } catch (e) {}
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,8 +92,8 @@
     </nav>
     <div class="topo-acoes">
       <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
-        <span class="avatar">VT</span>
-        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+        <span class="avatar">…</span>
+        <span class="perfil-txt">Carregando…<small>•••• ••••</small></span>
       </button>
       <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
         <svg class="i"><use href="#i-menu"/></svg>
@@ -109,8 +111,8 @@
 <div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
 <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
   <div class="gv-topo">
-    <span class="avatar">VT</span>
-    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <span class="avatar">…</span>
+    <div><b>Carregando…</b><small>Cartão •••• ••••</small></div>
     <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
   </div>
   <div class="gv-corpo">
@@ -129,8 +131,8 @@
     <section class="gv-sec" aria-labelledby="gv-h2">
       <h3 id="gv-h2">Conta e segurança</h3>
       <div class="gv-card">
-        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
-        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Seus dados e seu cartão</small></span></button>
+        <button class="gv-linha" type="button" id="gv-notif"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span></button>
       </div>
     </section>
     <section class="gv-sec" aria-labelledby="gv-h3">
@@ -138,7 +140,7 @@
       <div class="gv-card">
         <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
         <a class="gv-linha" href="assistente.html?q=Preciso%20de%20ajuda"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte<small>Fale com o assistente OKTOPAY</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
-        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-sair"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span></button>
       </div>
     </section>
   </div>
@@ -155,18 +157,18 @@
       </div>
       <div class="corpo-col" id="saldo-corpo"><div class="corpo-in">
         <div class="valor-linha">
-          <div class="valor sens">R$ 118,00</div>
+          <div class="valor sens" id="v-saldo">R$ …</div>
           <button class="olho" id="olho" type="button" aria-pressed="false" aria-label="Ocultar saldo" title="Ocultar/mostrar saldo">
             <svg class="i aberto"><use href="#i-eye"/></svg><svg class="i fechado"><use href="#i-eye-off"/></svg>
           </button>
         </div>
         <div class="linha">
-          <div>Créditos<b class="sens">R$ 725,00</b></div>
-          <div>Gasto em 16 compras<b class="sens">R$ 532,00</b></div>
-          <div>Média por compra<b class="sens">R$ 33,25</b></div>
+          <div>Créditos<b class="sens" id="v-cred">R$ …</b></div>
+          <div><span id="l-gasto">Gasto</span><b class="sens" id="v-gasto">R$ …</b></div>
+          <div>Média por compra<b class="sens" id="v-media">R$ …</b></div>
         </div>
         <div class="sl-cartao">
-          <span class="cartao-num"><svg class="i p"><use href="#i-card"/></svg>**** **** **** 4242</span>
+          <span class="cartao-num"><svg class="i p"><use href="#i-card"/></svg><span id="v-cartao">**** **** **** ----</span></span>
           <a class="chip-pts" id="chip-pts" href="premios.html"><svg class="i p"><use href="#i-star"/></svg><span>… pts</span></a>
         </div>
         <div class="acoes">
@@ -209,20 +211,15 @@
 
     <section class="cartao home-rec desk-only" aria-labelledby="t-hr">
       <h2 id="t-hr"><svg class="i"><use href="#i-receipt"/></svg>Últimos lançamentos</h2>
-      <p class="sub">Os mais recentes de sábado</p>
+      <p class="sub">Os lançamentos mais recentes</p>
       <ul class="extrato" id="home-extrato"></ul>
       <a class="ver-mais" href="extrato.html">Ver extrato completo<svg class="i p"><use href="#i-chev-r"/></svg></a>
     </section>
 
     <section class="cartao home-cat desk-only" aria-labelledby="t-hc">
       <h2 id="t-hc"><svg class="i"><use href="#i-pie"/></svg>Gastos por categoria</h2>
-      <p class="sub">Sábado · total R$ 532,00</p>
-      <ul class="gcat">
-          <li class="gc" style="--cor:var(--cat1); --fg:var(--fg1); --p:33.31%"><span class="gc-ico"><svg class="i g"><use href="#i-beer"/></svg></span><div class="gc-meio"><div class="gc-linha"><span class="gc-nome">Bebidas alcoólicas</span><b class="gc-val">R$ 177,20</b><span class="gc-pct">33,31%</span></div><div class="barra"><i></i></div></div></li>
-          <li class="gc" style="--cor:var(--cat2); --fg:var(--fg2); --p:29.10%"><span class="gc-ico"><svg class="i g"><use href="#i-bag"/></svg></span><div class="gc-meio"><div class="gc-linha"><span class="gc-nome">Acessórios</span><b class="gc-val">R$ 154,80</b><span class="gc-pct">29,10%</span></div><div class="barra"><i></i></div></div></li>
-          <li class="gc" style="--cor:var(--cat3); --fg:var(--fg3); --p:21.80%"><span class="gc-ico"><svg class="i g"><use href="#i-food"/></svg></span><div class="gc-meio"><div class="gc-linha"><span class="gc-nome">Comida</span><b class="gc-val">R$ 116,00</b><span class="gc-pct">21,80%</span></div><div class="barra"><i></i></div></div></li>
-          <li class="gc" style="--cor:var(--cat4); --fg:var(--fg4); --p:9.21%"><span class="gc-ico"><svg class="i g"><use href="#i-bottle"/></svg></span><div class="gc-meio"><div class="gc-linha"><span class="gc-nome">Bebidas não alcoólicas</span><b class="gc-val">R$ 49,00</b><span class="gc-pct">9,21%</span></div><div class="barra"><i></i></div></div></li>
-      </ul>
+      <p class="sub" id="sub-cat">…</p>
+      <ul class="gcat" id="home-gcat"></ul>
       <a class="ver-mais" href="gastos.html">Ver todos os gastos<svg class="i p"><use href="#i-chev-r"/></svg></a>
     </section>
   </div>
@@ -231,32 +228,10 @@
 
 </main>
 
-<script>
-  /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
+<script type="module">
+  /* ============ dados do usuário (vêm do Supabase, via Edge Function "carteira") ============ */
   // Mais recente primeiro. v = valor em reais.
-  const TRANSACOES = [
-    { h: "18:55", tipo: "compra", nome: "Bar Spaten", v: 31.90 },
-    { h: "18:30", tipo: "compra", nome: "Empório Oktober", v: 19.90 },
-    { h: "17:50", tipo: "compra", nome: "Brinquedoteca Galegão", v: 35.00 },
-    { h: "17:15", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "17:05", tipo: "estorno", nome: "Estorno · Brinquedoteca Galegão", v: 25.00 },
-    { h: "16:40", tipo: "compra", nome: "Bar Spaten", v: 56.70 },
-    { h: "16:05", tipo: "compra", nome: "Brinquedoteca Galegão", v: 25.00, estornada: true },
-    { h: "15:50", tipo: "saque", nome: "Saque", v: 50.00 },
-    { h: "15:25", tipo: "compra", nome: "Cantina do Setor 2", v: 38.00 },
-    { h: "15:10", tipo: "compra", nome: "Barraca do Setor 4", v: 21.00 },
-    { h: "14:35", tipo: "compra", nome: "Bar Spaten", v: 28.90 },
-    { h: "14:20", tipo: "recarga", nome: "Recarga PIX", v: 200.00 },
-    { h: "13:30", tipo: "compra", nome: "Empório Oktober", v: 89.90 },
-    { h: "12:45", tipo: "compra", nome: "Cantina do Festzelt", v: 14.00 },
-    { h: "12:20", tipo: "compra", nome: "Barraca do Setor 4", v: 20.00 },
-    { h: "11:50", tipo: "compra", nome: "Bar Spaten", v: 21.90 },
-    { h: "11:10", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "10:35", tipo: "compra", nome: "Barraca do Setor 4", v: 8.00 },
-    { h: "10:20", tipo: "compra", nome: "Bar Spaten", v: 37.80 },
-    { h: "10:05", tipo: "compra", nome: "Empório Oktober", v: 45.00 },
-    { h: "09:40", tipo: "recarga", nome: "Recarga PIX", v: 500.00 },
-  ];
+  const { CART, TRANSACOES } = await OKTO.dados();
 
   /* ============ regras do programa de pontos (fictício) ============ */
   const PTS_POR_REAIS = 5;          // 1 ponto a cada R$ 5,00 gastos (por compra, arredondado para baixo)
@@ -481,11 +456,24 @@
     const li = el("li");
     const ico = el("span", "ico " + cls); ico.appendChild(icone(ic));
     const meio = el("div");
-    meio.append(el("div", "nome", t.nome), el("div", "meta", t.h + " · " + tipoTexto(t)));
+    meio.append(el("div", "nome", t.nome), el("div", "meta", t.d + " " + t.h + " · " + tipoTexto(t)));
     const entra = t.tipo === "recarga" || t.tipo === "estorno";
     li.append(ico, meio, el("div", "quanto " + (entra ? "pos" : "neg"), (entra ? "+ " : "− ") + brl(t.v)));
     document.getElementById("home-extrato").appendChild(li);
   });
+
+  /* ---------- números do banco: saldo, resumo e categorias ---------- */
+  document.getElementById("v-saldo").textContent = brl(CART.saldo.saldo);
+  document.getElementById("v-cred").textContent = brl(CART.saldo.creditos);
+  const nq = CART.resumo.quantidade_compras;
+  document.getElementById("l-gasto").textContent = "Gasto em " + nq + (nq === 1 ? " compra" : " compras");
+  document.getElementById("v-gasto").textContent = brl(CART.resumo.total_gasto);
+  document.getElementById("v-media").textContent = brl(CART.resumo.gasto_medio_por_compra);
+  document.getElementById("v-cartao").textContent = CART.cartao.numero_mascarado;
+  if (!TRANSACOES.length) document.getElementById("home-extrato").appendChild(el("li", "vazio", "Nenhum lançamento ainda."));
+  const catHome = OKTO.somarCategorias(CART.compras);
+  document.getElementById("sub-cat").textContent = "Total " + brl(catHome.total);
+  OKTO.desenharCats(document.getElementById("home-gcat"), catHome.itens);
 
   /* ---------- ocultar / mostrar saldo ---------- */
   const cartaoSaldo = document.getElementById("carteira");

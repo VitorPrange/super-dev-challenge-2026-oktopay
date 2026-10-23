@@ -22,6 +22,8 @@
       } catch (e) {}
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,8 +92,8 @@
     </nav>
     <div class="topo-acoes">
       <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
-        <span class="avatar">VT</span>
-        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+        <span class="avatar">…</span>
+        <span class="perfil-txt">Carregando…<small>•••• ••••</small></span>
       </button>
       <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
         <svg class="i"><use href="#i-menu"/></svg>
@@ -109,8 +111,8 @@
 <div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
 <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
   <div class="gv-topo">
-    <span class="avatar">VT</span>
-    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <span class="avatar">…</span>
+    <div><b>Carregando…</b><small>Cartão •••• ••••</small></div>
     <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
   </div>
   <div class="gv-corpo">
@@ -129,8 +131,8 @@
     <section class="gv-sec" aria-labelledby="gv-h2">
       <h3 id="gv-h2">Conta e segurança</h3>
       <div class="gv-card">
-        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
-        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Seus dados e seu cartão</small></span></button>
+        <button class="gv-linha" type="button" id="gv-notif"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span></button>
       </div>
     </section>
     <section class="gv-sec" aria-labelledby="gv-h3">
@@ -138,14 +140,14 @@
       <div class="gv-card">
         <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
         <a class="gv-linha" href="assistente.html?q=Preciso%20de%20ajuda"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte<small>Fale com o assistente OKTOPAY</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
-        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-sair"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span></button>
       </div>
     </section>
   </div>
 </aside>
 
 <main class="pagina estreita">
-  <p class="aviso-fixo"><svg class="i"><use href="#i-shield"/></svg>Seus lançamentos de sábado, do mais recente para o mais antigo.</p>
+  <p class="aviso-fixo"><svg class="i"><use href="#i-shield"/></svg>Seus lançamentos, do mais recente para o mais antigo.</p>
 
   <section class="cartao" id="extrato" aria-labelledby="t-ext">
     <h2 id="t-ext"><svg class="i"><use href="#i-receipt"/></svg>Extrato</h2>
@@ -168,32 +170,10 @@
   <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
 </main>
 
-<script>
-  /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
+<script type="module">
+  /* ============ dados do usuário (vêm do Supabase, via Edge Function "carteira") ============ */
   // Mais recente primeiro. v = valor em reais.
-  const TRANSACOES = [
-    { h: "18:55", tipo: "compra", nome: "Bar Spaten", v: 31.90 },
-    { h: "18:30", tipo: "compra", nome: "Empório Oktober", v: 19.90 },
-    { h: "17:50", tipo: "compra", nome: "Brinquedoteca Galegão", v: 35.00 },
-    { h: "17:15", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "17:05", tipo: "estorno", nome: "Estorno · Brinquedoteca Galegão", v: 25.00 },
-    { h: "16:40", tipo: "compra", nome: "Bar Spaten", v: 56.70 },
-    { h: "16:05", tipo: "compra", nome: "Brinquedoteca Galegão", v: 25.00, estornada: true },
-    { h: "15:50", tipo: "saque", nome: "Saque", v: 50.00 },
-    { h: "15:25", tipo: "compra", nome: "Cantina do Setor 2", v: 38.00 },
-    { h: "15:10", tipo: "compra", nome: "Barraca do Setor 4", v: 21.00 },
-    { h: "14:35", tipo: "compra", nome: "Bar Spaten", v: 28.90 },
-    { h: "14:20", tipo: "recarga", nome: "Recarga PIX", v: 200.00 },
-    { h: "13:30", tipo: "compra", nome: "Empório Oktober", v: 89.90 },
-    { h: "12:45", tipo: "compra", nome: "Cantina do Festzelt", v: 14.00 },
-    { h: "12:20", tipo: "compra", nome: "Barraca do Setor 4", v: 20.00 },
-    { h: "11:50", tipo: "compra", nome: "Bar Spaten", v: 21.90 },
-    { h: "11:10", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "10:35", tipo: "compra", nome: "Barraca do Setor 4", v: 8.00 },
-    { h: "10:20", tipo: "compra", nome: "Bar Spaten", v: 37.80 },
-    { h: "10:05", tipo: "compra", nome: "Empório Oktober", v: 45.00 },
-    { h: "09:40", tipo: "recarga", nome: "Recarga PIX", v: 500.00 },
-  ];
+  const { CART, TRANSACOES } = await OKTO.dados();
 
   /* ============ regras do programa de pontos (fictício) ============ */
   const PTS_POR_REAIS = 5;          // 1 ponto a cada R$ 5,00 gastos (por compra, arredondado para baixo)
@@ -407,7 +387,7 @@
     const li = el("li");
     const ico = el("span", "ico " + cls); ico.appendChild(icone(ic));
     const meio = el("div");
-    meio.append(el("div", "nome", t.nome), el("div", "meta", t.h + " · " + tipoTexto(t) + (t.estornada ? " (estornada)" : "")));
+    meio.append(el("div", "nome", t.nome), el("div", "meta", t.d + " " + t.h + " · " + tipoTexto(t) + (t.estornada ? " (estornada)" : "")));
     const entra = t.tipo === "recarga" || t.tipo === "estorno";
     li.append(ico, meio, el("div", "quanto " + (entra ? "pos" : "neg"), (entra ? "+ " : "− ") + brl(t.v)));
     return li;
@@ -419,8 +399,9 @@
   });
   function atualizar() {
     const n = filtrar().length;
-    document.getElementById("sub-extrato").textContent = n + (n === 1 ? " lançamento" : " lançamentos") + " de sábado";
+    document.getElementById("sub-extrato").textContent = n + (n === 1 ? " lançamento" : " lançamentos");
     pg.atualizar(filtrar());
+    if (!n) document.getElementById("lista-extrato").replaceChildren(el("li", "vazio", "Nenhum lançamento ainda."));
   }
   atualizar();
   document.querySelectorAll("#filtros .chip").forEach((c) => {

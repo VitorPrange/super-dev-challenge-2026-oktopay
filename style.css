@@ -968,3 +968,24 @@ button:focus:not(:focus-visible), a:focus:not(:focus-visible), [tabindex]:focus:
 :focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
 .topo :focus-visible, .saldo :focus-visible, .gaveta :focus-visible, .tabbar :focus-visible, .home-pts :focus-visible, .tile-destaque:focus-visible { outline-color: rgba(255, 255, 255, .8); }
 input, textarea { user-select: text; -webkit-user-select: text; }
+
+/* ---------- login / cadastro ---------- */
+.auth { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+.auth-card { width: 100%; max-width: 420px; }
+.auth-marca { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 18px; font-weight: 800; font-size: 22px; letter-spacing: .06em; }
+.auth form { display: grid; gap: 14px; margin-top: 14px; }
+.campo { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+.campo input { min-height: 48px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--well); color: var(--ink); font: inherit; }
+.campo input:focus { outline: 3px solid rgba(var(--a1-rgb), .55); border-color: var(--brand-2); }
+.auth .btn { width: 100%; min-height: 50px; justify-content: center; }
+.auth-msg { min-height: 20px; margin: 0; font-size: 14px; }
+.auth-msg.erro { color: var(--err); font-weight: 600; }
+.auth-msg.ok { color: var(--ok); font-weight: 600; }
+.auth-troca { text-align: center; margin: 16px 0 0; font-size: 14px; }
+.auth-troca a { color: var(--brand-dark); font-weight: 700; }
+:root[data-theme="dark"] .auth-troca a { color: var(--brand); }
+
+/* ---------- folhas do menu (perfil e notificações) ---------- */
+.folha-corpo { margin: 10px 0 4px; max-height: 55vh; overflow: auto; }
+.folha-corpo .linhas { margin: 6px 0; }
+.etq-n { background: var(--brand-2); color: #fff; }

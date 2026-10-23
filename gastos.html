@@ -22,6 +22,8 @@
       } catch (e) {}
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -90,8 +92,8 @@
     </nav>
     <div class="topo-acoes">
       <button class="perfil" id="perfil-btn" type="button" title="Abrir menu" aria-label="Abrir menu do usuário">
-        <span class="avatar">VT</span>
-        <span class="perfil-txt">Visitante Teste<small>•••• 4242</small></span>
+        <span class="avatar">…</span>
+        <span class="perfil-txt">Carregando…<small>•••• ••••</small></span>
       </button>
       <button class="icone-btn" id="menu-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="gaveta" aria-label="Abrir menu e configurações" title="Menu e configurações">
         <svg class="i"><use href="#i-menu"/></svg>
@@ -109,8 +111,8 @@
 <div class="gaveta-fundo" id="gaveta-fundo" hidden></div>
 <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-label="Menu e configurações" hidden>
   <div class="gv-topo">
-    <span class="avatar">VT</span>
-    <div><b>Visitante Teste</b><small>Cartão •••• 4242</small></div>
+    <span class="avatar">…</span>
+    <div><b>Carregando…</b><small>Cartão •••• ••••</small></div>
     <button class="icone-btn gv-fechar" type="button" aria-label="Fechar menu"><svg class="i"><use href="#i-x"/></svg></button>
   </div>
   <div class="gv-corpo">
@@ -129,8 +131,8 @@
     <section class="gv-sec" aria-labelledby="gv-h2">
       <h3 id="gv-h2">Conta e segurança</h3>
       <div class="gv-card">
-        <button class="gv-linha" type="button" data-breve="Meu perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Nome, foto e contato</small></span><span class="etq">em breve</span></button>
-        <button class="gv-linha" type="button" data-breve="Notificações"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-perfil"><svg class="i"><use href="#i-user"/></svg><span class="tx">Meu perfil<small>Seus dados e seu cartão</small></span></button>
+        <button class="gv-linha" type="button" id="gv-notif"><svg class="i"><use href="#i-bell"/></svg><span class="tx">Notificações<small>Compras, recargas e prêmios</small></span></button>
       </div>
     </section>
     <section class="gv-sec" aria-labelledby="gv-h3">
@@ -138,7 +140,7 @@
       <div class="gv-card">
         <a class="gv-linha" href="painel.html"><svg class="i"><use href="#i-grid"/></svg><span class="tx">Painel da operação<small>Aprovar rascunhos do agente</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
         <a class="gv-linha" href="assistente.html?q=Preciso%20de%20ajuda"><svg class="i"><use href="#i-help"/></svg><span class="tx">Ajuda e suporte<small>Fale com o assistente OKTOPAY</small></span><svg class="i p"><use href="#i-chev-r"/></svg></a>
-        <button class="gv-linha" type="button" data-breve="Sair da conta"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span><span class="etq">em breve</span></button>
+        <button class="gv-linha" type="button" id="gv-sair"><svg class="i"><use href="#i-logout"/></svg><span class="tx">Sair</span></button>
       </div>
     </section>
   </div>
@@ -154,57 +156,21 @@
           <span class="gc-logo"><svg class="i g"><use href="#i-bars"/></svg></span>
           <div class="gc-tit">
             <h2 id="t-cat">Gastos por categoria</h2>
-            <p class="sub" id="sub-gastos">Sábado · total R$ 532,00</p>
+            <p class="sub" id="sub-gastos">…</p>
           </div>
           <div class="periodo" id="periodo">
             <button class="periodo-btn" id="periodo-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="periodo-lista">
               <span class="periodo-ico"><svg class="i"><use href="#i-calendar"/></svg></span>
-              <span id="periodo-rot">Sábado</span>
+              <span id="periodo-rot">…</span>
               <svg class="i seta-p"><use href="#i-chev-d"/></svg>
             </button>
             <ul class="periodo-lista" id="periodo-lista" role="listbox" aria-label="Período" hidden></ul>
           </div>
         </div>
-        <ul class="gcat">
-          <li class="gc" style="--cor:var(--cat1); --fg:var(--fg1); --p:33.31%">
-            <span class="gc-ico"><svg class="i g"><use href="#i-beer"/></svg></span>
-            <div class="gc-meio">
-              <div class="gc-linha"><span class="gc-nome">Bebidas alcoólicas</span><b class="gc-val">R$ 177,20</b><span class="gc-pct">33,31%</span></div>
-              <div class="barra"><i></i></div>
-            </div>
-          </li>
-          <li class="gc" style="--cor:var(--cat2); --fg:var(--fg2); --p:29.10%">
-            <span class="gc-ico"><svg class="i g"><use href="#i-bag"/></svg></span>
-            <div class="gc-meio">
-              <div class="gc-linha"><span class="gc-nome">Acessórios</span><b class="gc-val">R$ 154,80</b><span class="gc-pct">29,10%</span></div>
-              <div class="barra"><i></i></div>
-            </div>
-          </li>
-          <li class="gc" style="--cor:var(--cat3); --fg:var(--fg3); --p:21.80%">
-            <span class="gc-ico"><svg class="i g"><use href="#i-food"/></svg></span>
-            <div class="gc-meio">
-              <div class="gc-linha"><span class="gc-nome">Comida</span><b class="gc-val">R$ 116,00</b><span class="gc-pct">21,80%</span></div>
-              <div class="barra"><i></i></div>
-            </div>
-          </li>
-          <li class="gc" style="--cor:var(--cat4); --fg:var(--fg4); --p:9.21%">
-            <span class="gc-ico"><svg class="i g"><use href="#i-bottle"/></svg></span>
-            <div class="gc-meio">
-              <div class="gc-linha"><span class="gc-nome">Bebidas não alcoólicas</span><b class="gc-val">R$ 49,00</b><span class="gc-pct">9,21%</span></div>
-              <div class="barra"><i></i></div>
-            </div>
-          </li>
-          <li class="gc" style="--cor:var(--cat5); --fg:var(--fg5); --p:6.58%">
-            <span class="gc-ico"><svg class="i g"><use href="#i-ticket"/></svg></span>
-            <div class="gc-meio">
-              <div class="gc-linha"><span class="gc-nome">Brinquedos</span><b class="gc-val">R$ 35,00</b><span class="gc-pct">6,58%</span></div>
-              <div class="barra"><i></i></div>
-            </div>
-          </li>
-        </ul>
+        <ul class="gcat"></ul>
         <div class="gc-rodape">
-          <div><svg class="i g"><use href="#i-wallet"/></svg><span><small>Média por compra</small><b id="gc-media">R$ 33,25</b></span></div>
-          <div><svg class="i g"><use href="#i-cart"/></svg><span><small>Quantidade de compras</small><b id="gc-qtd">16</b></span></div>
+          <div><svg class="i g"><use href="#i-wallet"/></svg><span><small>Média por compra</small><b id="gc-media">R$ 0,00</b></span></div>
+          <div><svg class="i g"><use href="#i-cart"/></svg><span><small>Quantidade de compras</small><b id="gc-qtd">0</b></span></div>
         </div>
       </section>
     </div>
@@ -213,32 +179,10 @@
   <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
 </main>
 
-<script>
-  /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
+<script type="module">
+  /* ============ dados do usuário (vêm do Supabase, via Edge Function "carteira") ============ */
   // Mais recente primeiro. v = valor em reais.
-  const TRANSACOES = [
-    { h: "18:55", tipo: "compra", nome: "Bar Spaten", v: 31.90 },
-    { h: "18:30", tipo: "compra", nome: "Empório Oktober", v: 19.90 },
-    { h: "17:50", tipo: "compra", nome: "Brinquedoteca Galegão", v: 35.00 },
-    { h: "17:15", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "17:05", tipo: "estorno", nome: "Estorno · Brinquedoteca Galegão", v: 25.00 },
-    { h: "16:40", tipo: "compra", nome: "Bar Spaten", v: 56.70 },
-    { h: "16:05", tipo: "compra", nome: "Brinquedoteca Galegão", v: 25.00, estornada: true },
-    { h: "15:50", tipo: "saque", nome: "Saque", v: 50.00 },
-    { h: "15:25", tipo: "compra", nome: "Cantina do Setor 2", v: 38.00 },
-    { h: "15:10", tipo: "compra", nome: "Barraca do Setor 4", v: 21.00 },
-    { h: "14:35", tipo: "compra", nome: "Bar Spaten", v: 28.90 },
-    { h: "14:20", tipo: "recarga", nome: "Recarga PIX", v: 200.00 },
-    { h: "13:30", tipo: "compra", nome: "Empório Oktober", v: 89.90 },
-    { h: "12:45", tipo: "compra", nome: "Cantina do Festzelt", v: 14.00 },
-    { h: "12:20", tipo: "compra", nome: "Barraca do Setor 4", v: 20.00 },
-    { h: "11:50", tipo: "compra", nome: "Bar Spaten", v: 21.90 },
-    { h: "11:10", tipo: "compra", nome: "Cantina do Festzelt", v: 32.00 },
-    { h: "10:35", tipo: "compra", nome: "Barraca do Setor 4", v: 8.00 },
-    { h: "10:20", tipo: "compra", nome: "Bar Spaten", v: 37.80 },
-    { h: "10:05", tipo: "compra", nome: "Empório Oktober", v: 45.00 },
-    { h: "09:40", tipo: "recarga", nome: "Recarga PIX", v: 500.00 },
-  ];
+  const { CART, TRANSACOES } = await OKTO.dados();
 
   /* ============ regras do programa de pontos (fictício) ============ */
   const PTS_POR_REAIS = 5;          // 1 ponto a cada R$ 5,00 gastos (por compra, arredondado para baixo)
@@ -444,48 +388,37 @@
     topo.addEventListener("click", () => { if (!pc()) aplicar(!card.classList.contains("colapsado"), true); });
   });
 
-  /* ---------- período: menu próprio + dados simulados por dia ---------- */
-  /* No exemplo da spec só existem "hoje" e "sabado" (mesmo dia simulado); os demais dias são só para demonstrar a interface. */
-  const CATS = [
-    { n: "Bebidas alcoólicas", i: "beer" }, { n: "Acessórios", i: "bag" }, { n: "Comida", i: "food" },
-    { n: "Bebidas não alcoólicas", i: "bottle" }, { n: "Brinquedos", i: "ticket" },
-  ];
-  const DIA = {
-    sabado:  { rot: "Sábado",  v: [177.2, 154.8, 116, 49, 35], q: 16, est: [1, 25] },
-    sexta:   { rot: "Sexta",   v: [84.5, 61, 92.4, 31, 18],   q: 9,  est: [0, 0] },
-    quinta:  { rot: "Quinta",  v: [42, 38, 55.5, 22, 12],     q: 6,  est: [0, 0] },
-    domingo: { rot: "Domingo", v: [60, 48, 70.5, 26, 10],     q: 8,  est: [1, 12] },
+  /* ---------- período: calculado a partir das compras que estão no banco ---------- */
+  const COMPRAS = CART.compras;
+  const diaKey = (c) => OKTO.chaveDia(c.criado_em);
+  const hojeK = OKTO.chaveDia(new Date().toISOString());
+  const seteK = OKTO.chaveDia(new Date(Date.now() - 6 * 86400000).toISOString());
+  const rotDia = (k) => {
+    const t = new Date(k + "T12:00:00-03:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
   };
-  DIA.hoje = Object.assign({}, DIA.sabado, { rot: "Hoje" });
-  DIA.semana = { rot: "Últimos 7 dias", v: CATS.map((_, k) => ["sabado", "sexta", "quinta", "domingo"].reduce((s, d) => s + DIA[d].v[k], 0)),
-                 q: 39, est: [2, 37] };
-  const GRUPOS = [["Atalhos", ["hoje", "semana"]], ["Dias do festival", ["sabado", "sexta", "domingo", "quinta"]]];
-  const soma = (d) => d.v.reduce((a, b) => a + b, 0);
-  const pct = (x) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+  const diasComCompra = [...new Set(COMPRAS.map(diaKey))].sort().reverse();
+  const PER = {
+    hoje:   { rot: "Hoje",           f: (c) => diaKey(c) === hojeK },
+    semana: { rot: "Últimos 7 dias", f: (c) => diaKey(c) >= seteK },
+    tudo:   { rot: "Todo o período", f: () => true },
+  };
+  diasComCompra.forEach((k) => { PER[k] = { rot: rotDia(k), f: (c) => diaKey(c) === k }; });
+  Object.values(PER).forEach((p) => { p.dados = OKTO.somarCategorias(COMPRAS.filter(p.f)); });
+  const GRUPOS = [["Atalhos", ["hoje", "semana", "tudo"]]];
+  if (diasComCompra.length) GRUPOS.push(["Dias com compras", diasComCompra]);
 
   const btnP = document.getElementById("periodo-btn");
   const listaP = document.getElementById("periodo-lista");
-  let atualP = "sabado";
+  let atualP = "tudo";
 
   function desenharDia(k) {
-    const d = DIA[k], total = soma(d);
+    const d = PER[k];
     document.getElementById("periodo-rot").textContent = d.rot;
-    document.getElementById("sub-gastos").textContent = d.rot + " · total " + brl(total);
-    const ul = document.querySelector(".gcat");
-    ul.replaceChildren();
-    d.v.map((v, idx) => ({ v, idx })).sort((a, b) => b.v - a.v).forEach(({ v, idx }) => {
-      const li = document.createElement("li");
-      li.className = "gc";
-      li.style.cssText = "--cor:var(--cat" + (idx + 1) + "); --fg:var(--fg" + (idx + 1) + "); --p:" + (v / total * 100).toFixed(2) + "%";
-      li.innerHTML = '<span class="gc-ico"><svg class="i g"><use href="#i-' + CATS[idx].i + '"/></svg></span>' +
-        '<div class="gc-meio"><div class="gc-linha"><span class="gc-nome"></span><b class="gc-val"></b><span class="gc-pct"></span></div><div class="barra"><i></i></div></div>';
-      li.querySelector(".gc-nome").textContent = CATS[idx].n;
-      li.querySelector(".gc-val").textContent = brl(v);
-      li.querySelector(".gc-pct").textContent = pct(v / total * 100);
-      ul.appendChild(li);
-    });
-    document.getElementById("gc-media").textContent = brl(total / d.q);
-    document.getElementById("gc-qtd").textContent = d.q;
+    document.getElementById("sub-gastos").textContent = d.rot + " · total " + brl(d.dados.total);
+    OKTO.desenharCats(document.querySelector(".gcat"), d.dados.itens);
+    document.getElementById("gc-media").textContent = brl(d.dados.q ? d.dados.total / d.dados.q : 0);
+    document.getElementById("gc-qtd").textContent = d.dados.q;
   }
 
   function montarLista() {
@@ -498,8 +431,8 @@
         o.setAttribute("role", "option"); o.tabIndex = -1; o.dataset.v = id;
         o.setAttribute("aria-selected", String(id === atualP));
         o.innerHTML = '<svg class="i"><use href="#i-check"/></svg><span></span><small></small>';
-        o.children[1].textContent = DIA[id].rot;
-        o.children[2].textContent = brl(soma(DIA[id]));
+        o.children[1].textContent = PER[id].rot;
+        o.children[2].textContent = brl(PER[id].dados.total);
         o.addEventListener("click", () => escolher(id));
         listaP.appendChild(o);
       });
