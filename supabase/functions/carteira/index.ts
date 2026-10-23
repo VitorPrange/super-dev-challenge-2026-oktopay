@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { perfil, cartao, conta } = await garantirConta(db, user)
 
-    const [saldoR, resumoR, txR, comprasR, catsR] = await Promise.all([
+    const [saldoR, resumoR, txR, comprasR, catsR, resgatesR] = await Promise.all([
       db.rpc('ok_fn_consultar_saldo', { p_usuario_id: uid }),
       db.rpc('ok_fn_resumo_financeiro', { p_usuario_id: uid }),
       db.from('ok_transacoes')
@@ -68,11 +68,16 @@ Deno.serve(async (req: Request) => {
         .eq('usuario_id', uid).eq('status', 'confirmada')
         .order('criado_em', { ascending: false }).limit(500),
       db.from('ok_categorias').select('nome, ordem').order('ordem'),
+      db.from('ok_rascunhos').select('payload, status, criado_em').eq('usuario_id', uid).eq('tipo', 'premio').in('status', ['aguardando_aprovacao', 'aprovado']).order('criado_em', { ascending: false }).limit(500),
     ])
-    for (const r of [saldoR, resumoR, txR, comprasR, catsR]) if (r.error) throw new Error(r.error.message)
+    for (const r of [saldoR, resumoR, txR, comprasR, catsR, resgatesR]) if (r.error) throw new Error(r.error.message)
 
     const saldo = saldoR.data?.[0] ?? { saldo: 0, creditos: 0, debitos: 0, saldo_pendente: 0 }
     const resumo = resumoR.data?.[0] ?? { total_gasto: 0, saldo_atual: saldo.saldo, quantidade_compras: 0, gasto_medio_por_compra: 0 }
+    // Pontos reservados em pedidos pendentes e pontos já consumidos em prêmios aprovados.
+    // Pedidos recusados não entram nesta soma, portanto os pontos são liberados.
+    const resgates = resgatesR.data ?? []
+    const pontos_resgatados = resgates.reduce((total: number, r: any) => total + Math.max(0, Number(r.payload?.custo_pontos) || 0), 0)
 
     // deno-lint-ignore no-explicit-any
     const transacoes = (txR.data ?? []).map((t: any) => {
@@ -109,7 +114,7 @@ Deno.serve(async (req: Request) => {
       perfil: { id: uid, nome: perfil.nome, email: user.email ?? null, criado_em: perfil.criado_em },
       cartao: { numero_mascarado: cartao.numero_mascarado, status: cartao.status },
       conta: { status: conta.status },
-      saldo, resumo, transacoes, compras, categorias: catsR.data ?? [],
+      saldo, resumo, transacoes, compras, categorias: catsR.data ?? [], pontos_resgatados,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

@@ -169,7 +169,7 @@
       const a = document.querySelector(".aviso-fixo");
       if (a) { a.textContent = "Não consegui carregar seus dados: " + erro; a.style.color = "var(--err)"; }
     }
-    const vazio = { saldo: { saldo: 0, creditos: 0, debitos: 0, saldo_pendente: 0 }, resumo: { total_gasto: 0, quantidade_compras: 0, gasto_medio_por_compra: 0 },
+    const vazio = { saldo: { saldo: 0, creditos: 0, debitos: 0, saldo_pendente: 0 }, resumo: { total_gasto: 0, quantidade_compras: 0, gasto_medio_por_compra: 0 }, pontos_resgatados: 0,
                     cartao: { numero_mascarado: "**** **** **** ----" }, perfil: { nome: "" }, transacoes: [], compras: [], categorias: [] };
     CART = Object.assign(vazio, CART || {});
     const TRANSACOES = CART.transacoes.map((t) => ({ h: fmtHora(t.criado_em), d: fmtDia(t.criado_em), iso: t.criado_em, tipo: t.tipo, nome: t.nome, v: t.valor, estornada: t.estornada }));

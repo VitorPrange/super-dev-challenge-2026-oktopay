@@ -36,11 +36,7 @@ Deno.serve(async (req: Request) => {
       .select('id, payload, status').eq('usuario_id', userId).eq('tipo', 'premio')
       .order('criado_em', { ascending: false }).limit(100)
     if (error) return json({ erro: error.message }, 500)
-    const { data: ledger, error: ledgerError } = await db.from('ok_resgates_pontos')
-      .select('pontos').eq('usuario_id', userId).in('status', ['reservado', 'consumido'])
-    if (ledgerError) return json({ erro: ledgerError.message }, 500)
-    const pontos_resgatados = (ledger ?? []).reduce((s: number, r: { pontos: number }) => s + Number(r.pontos), 0)
-    return json({ pedidos: data ?? [], pontos_resgatados })
+    return json({ pedidos: data ?? [] })
   }
 
   const body = await req.json().catch(() => ({}))
@@ -54,21 +50,21 @@ Deno.serve(async (req: Request) => {
     .select('tipo, valor, status').eq('usuario_id', userId)
     .in('status', ['confirmada', 'estornada'])
   if (txError) return json({ erro: txError.message }, 500)
-  const pontosBrutos = (txs ?? []).reduce((total: number, tx: { tipo: string; valor: number; status: string }) =>
+  const pontosGanhos = (txs ?? []).reduce((total: number, tx: { tipo: string; valor: number; status: string }) =>
     total + (tx.status === 'estornada' ? 0 : pontos(tx.tipo, Number(tx.valor))), 0)
-  const { data: ledgerAtual, error: ledgerError } = await db.from('ok_resgates_pontos')
-    .select('pontos').eq('usuario_id', userId).in('status', ['reservado', 'consumido'])
-  if (ledgerError) return json({ erro: ledgerError.message }, 500)
-  const pontosUsados = (ledgerAtual ?? []).reduce((s: number, r: { pontos: number }) => s + Number(r.pontos), 0)
-  const saldoPontos = pontosBrutos - pontosUsados
-  if (saldoPontos < premio.custo) return json({ erro: `Pontos insuficientes. Saldo disponível: ${saldoPontos} pts.` }, 400)
 
+  // Pontos de pedidos pendentes ficam reservados; os aprovados continuam consumidos.
+  // Pedidos recusados são excluídos e, assim, devolvem os pontos automaticamente.
   const { data: existentes, error: exError } = await db.from('ok_rascunhos')
-    .select('id, payload').eq('usuario_id', userId).eq('tipo', 'premio')
-    .eq('status', 'aguardando_aprovacao')
+    .select('id, payload, status').eq('usuario_id', userId).eq('tipo', 'premio')
+    .in('status', ['aguardando_aprovacao', 'aprovado'])
   if (exError) return json({ erro: exError.message }, 500)
-  if ((existentes ?? []).some((r: { payload: { premio_id?: string } }) => r.payload?.premio_id === id))
+  if ((existentes ?? []).some((r: { payload: { premio_id?: string }; status: string }) => r.status === 'aguardando_aprovacao' && r.payload?.premio_id === id))
     return json({ erro: 'Você já tem um pedido deste prêmio aguardando aprovação.' }, 409)
+  const pontosReservados = (existentes ?? []).reduce((total: number, r: { payload: { custo_pontos?: number } }) =>
+    total + Math.max(0, Number(r.payload?.custo_pontos) || 0), 0)
+  const saldoPontos = pontosGanhos - pontosReservados
+  if (saldoPontos < premio.custo) return json({ erro: `Pontos insuficientes. Saldo disponível: ${saldoPontos} pts.` }, 400)
 
   const payload = { premio_id: id, premio_nome: premio.nome, custo_pontos: premio.custo, ...(artista ? { artista } : {}) }
   const { data, error } = await db.from('ok_rascunhos').insert({
@@ -78,12 +74,5 @@ Deno.serve(async (req: Request) => {
     status: 'aguardando_aprovacao',
   }).select('id, status').single()
   if (error) return json({ erro: error.message }, 500)
-  const { error: ledgerInsertError } = await db.from('ok_resgates_pontos').insert({
-    pedido_id: data.id, usuario_id: userId, pontos: premio.custo, status: 'reservado',
-  })
-  if (ledgerInsertError) {
-    await db.from('ok_rascunhos').delete().eq('id', data.id).eq('usuario_id', userId)
-    return json({ erro: ledgerInsertError.message }, 500)
-  }
-  return json({ ok: true, pedido: data, saldo_pontos: saldoPontos - premio.custo })
+  return json({ ok: true, pedido: data })
 })

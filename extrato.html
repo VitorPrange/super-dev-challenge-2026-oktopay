@@ -190,7 +190,8 @@
     if (t.tipo === "estorno") return -Math.floor(t.v / PTS_POR_REAIS);
     return 0; // saque não pontua
   }
-  const PONTOS = TRANSACOES.reduce((s, t) => s + pontosDe(t), 0);
+  const PONTOS_GANHOS_LIQUIDOS = TRANSACOES.reduce((s, t) => s + pontosDe(t), 0);
+  const PONTOS = Math.max(0, PONTOS_GANHOS_LIQUIDOS - Number(CART.pontos_resgatados || 0));
   const nivelAtual = [...NIVEIS].reverse().find((n) => PONTOS >= n.min);
   const proxNivel = NIVEIS.find((n) => n.min > PONTOS);
 
