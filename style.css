@@ -363,6 +363,39 @@ button, input, textarea { font: inherit; color: inherit; }
 .resposta li { margin-bottom: 4px; }
 .resposta.erro { background: var(--err-soft); color: var(--err); border-color: transparent; border-left-color: var(--err); }
 
+/* ---------- memória da conversa (assistente) ---------- */
+.memoria { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: var(--well); border: 1px solid var(--line); }
+.mem-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.mem-titulo { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 13px; font-weight: 800; }
+.mem-titulo .i { color: var(--brand-2); align-self: center; }
+:root[data-theme="dark"] .mem-titulo .i { color: var(--brand); }
+.mem-titulo small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.btn-limpar {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 700;
+  transition: all .18s ease;
+}
+.btn-limpar:hover:not(:disabled) { border-color: var(--brand-2); color: var(--brand-2); }
+.btn-limpar:disabled { opacity: .5; cursor: not-allowed; }
+.mem-barra { margin-top: 10px; height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.mem-barra > i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--ok); transition: width .4s ease, background .2s ease; }
+.mem-barra.atencao > i { background: var(--brand-3); }
+.mem-barra.cheio > i { background: var(--err); }
+.mem-detalhe { margin: 8px 0 0; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.conversa { display: grid; gap: 10px; margin-top: 14px; max-height: 55vh; overflow-y: auto; padding-right: 4px; }
+.conversa:empty { display: none; }
+.msg { max-width: 92%; padding: 12px 14px; border-radius: 16px; font-size: 15px; overflow-wrap: anywhere; animation: subir .3s ease both; }
+.msg p { margin: 0 0 8px; }
+.msg p:last-child, .msg ul:last-child { margin-bottom: 0; }
+.msg ul { margin: 0 0 8px; padding-left: 20px; }
+.msg li { margin-bottom: 4px; }
+.msg.eu { justify-self: end; background: var(--brand-soft); border: 1px solid var(--line); white-space: pre-wrap; }
+.msg.ia { justify-self: start; background: var(--well); border: 1px solid var(--line); border-left: 5px solid var(--brand); }
+.msg.pensando { color: var(--muted); font-style: italic; }
+.conversa-aviso { justify-self: center; text-align: center; font-size: 12px; font-weight: 700; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 6px 14px; }
+
 .passos { margin-top: 16px; }
 .passos h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
 .passos ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

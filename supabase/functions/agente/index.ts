@@ -7,11 +7,17 @@
 //  3. Recarga, saque e compra só criam RASCUNHO. Quem move dinheiro é o painel,
 //     depois de uma pessoa aprovar.
 //  4. A chave da Anthropic fica em um Secret, nunca no navegador.
+//  5. Memória: o histórico vem do navegador (dado não confiável, validado em _shared/historico.ts) e só vira
+//     texto de conversa. Ele não dá poder nenhum: o id do usuário e as regras das ferramentas seguem no servidor.
 import { clienteAdmin } from '../_shared/supabase.ts'
 import { corsHeaders, json } from '../_shared/cors.ts'
+import { MODELO_PADRAO, JANELA_MODELO, contextoUsado, limiteDeContexto, limparHistorico } from '../_shared/historico.ts'
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
 const MAX_VOLTAS = 6 // limite de idas e vindas com o modelo, evita laço infinito
+// No Haiku 5.5 o pensamento (adaptive thinking) é ligado por padrão e CONTA dentro de max_tokens; com um valor
+// pequeno a resposta pode parar depois do pensamento, antes do texto (migration guide do Haiku 5.5).
+const MAX_TOKENS_SAIDA = 4096
 
 type Passo = { ferramenta: string; entrada: unknown; ok: boolean; erro?: string }
 // deno-lint-ignore no-explicit-any
@@ -301,39 +307,53 @@ Deno.serve(async (req: Request) => {
   if ((count ?? 0) >= limite) return json({ erro: 'Limite de perguntas por hora atingido. Tente mais tarde.' }, 429)
 
   const chaveIA = Deno.env.get('ANTHROPIC_API_KEY')
-  const modelo = Deno.env.get('ANTHROPIC_MODEL')
-  if (!chaveIA || !modelo) return json({ erro: 'Agente sem configuração (ANTHROPIC_API_KEY / ANTHROPIC_MODEL).' }, 500)
+  // Secret ANTHROPIC_MODEL (se existir) tem prioridade; sem ele, usa o Haiku 5.5.
+  const modelo = Deno.env.get('ANTHROPIC_MODEL') || MODELO_PADRAO
+  if (!chaveIA) return json({ erro: 'Agente sem configuração (ANTHROPIC_API_KEY).' }, 500)
+  // Orçamento de contexto por conversa (Secret opcional CONTEXTO_MAX_TOKENS; padrão 100 mil, máximo 1M).
+  const limiteContexto = limiteDeContexto(Deno.env.get('CONTEXTO_MAX_TOKENS'))
 
   const passos: Passo[] = []
   const usadas: string[] = []
-  // Histórico curto enviado pelo navegador (o servidor não guarda conversa): só texto, alternando user/assistant.
-  const historico: { role: string; content: string }[] = []
-  if (Array.isArray(corpo?.historico)) {
-    for (const m of corpo.historico.slice(-10)) {
-      if ((m?.role !== 'user' && m?.role !== 'assistant') || typeof m?.content !== 'string' || !m.content.trim()) continue
-      const ultimo = historico[historico.length - 1]
-      if (historico.length === 0 && m.role !== 'user') continue
-      if (ultimo && ultimo.role === m.role) continue
-      historico.push({ role: m.role, content: m.content.slice(0, 1500) })
-    }
-    if (historico.length && historico[historico.length - 1].role === 'user') historico.pop() // a pergunta nova é do usuário
-  }
+  // Memória da conversa: o servidor não guarda nada; o navegador reenvia o histórico (validado em limparHistorico).
+  const historico = limparHistorico(corpo?.historico, limiteContexto)
   const mensagens: unknown[] = [...historico, { role: 'user', content: pergunta }]
   let resposta = ''
   let falha: string | null = null
+  let estourou = false // a conversa passou da janela de contexto do modelo
+  let uso = 0 // tokens que a ÚLTIMA chamada ao modelo deste turno ocupou na janela (entrada + saída)
 
   try {
     for (let volta = 0; volta < MAX_VOLTAS; volta++) {
       const r = await fetch(ANTHROPIC_URL, {
         method: 'POST',
         headers: { 'x-api-key': chaveIA, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model: modelo, max_tokens: 1500, system: SYSTEM, tools: FERRAMENTAS, messages: mensagens }),
+        body: JSON.stringify({ model: modelo, max_tokens: MAX_TOKENS_SAIDA, system: SYSTEM, tools: FERRAMENTAS, messages: mensagens }),
       })
       const dados = await r.json()
-      if (!r.ok) throw new Error('Anthropic: ' + (dados?.error?.message ?? r.status))
+      if (!r.ok) {
+        const msgErro = String(dados?.error?.message ?? r.status)
+        // 400 "prompt is too long": só a entrada já não cabe na janela (doc: Context windows, overflow).
+        if (r.status === 400 && /too long/i.test(msgErro)) estourou = true
+        throw new Error('Anthropic: ' + msgErro)
+      }
+      uso = contextoUsado(dados.usage)
 
       if (dados.stop_reason !== 'tool_use') {
         resposta = (dados.content ?? []).filter((b: Cliente) => b.type === 'text').map((b: Cliente) => b.text).join('\n').trim()
+        // Stop reasons que não são "terminou normal" (doc: Stop reasons and fallback).
+        if (dados.stop_reason === 'refusal') {
+          // Recusa vem como HTTP 200 (classificadores de segurança); o Haiku 5.5 não tem fallback no servidor.
+          resposta = ''
+          falha = 'O modelo recusou este pedido. Tente reformular a pergunta.'
+        } else if (dados.stop_reason === 'model_context_window_exceeded') {
+          estourou = true
+          if (!resposta) falha = 'A conversa encheu a janela de contexto do modelo.'
+          else resposta += '\n\n*(resposta cortada: a conversa atingiu o limite de contexto)*'
+        } else if (dados.stop_reason === 'max_tokens') {
+          if (!resposta) falha = 'A resposta passou do tamanho máximo antes de terminar. Tente uma pergunta mais curta.'
+          else resposta += '\n\n*(resposta cortada pelo limite de tamanho)*'
+        }
         break
       }
 
@@ -359,16 +379,22 @@ Deno.serve(async (req: Request) => {
     falha = err instanceof Error ? err.message : String(err)
     console.error('agente falhou:', falha)
   }
+  if (!resposta && !falha) falha = 'O assistente não devolveu texto. Tente reformular a pergunta.'
 
   const duracao_ms = Date.now() - inicio
   await db.from('ok_execucoes').insert({
     usuario_id: userId, pergunta, resposta: resposta || falha, passos, duracao_ms, modelo,
   })
 
-  if (falha && !resposta) return json({ erro: 'Não consegui responder agora. ' + falha, passos, duracao_ms }, 502)
+  // `reiniciar` manda o navegador apagar a memória: a conversa estourou o orçamento (ou a janela do modelo).
+  if (falha && !resposta) {
+    return json({ erro: 'Não consegui responder agora. ' + falha, passos, duracao_ms, modelo, reiniciar: estourou }, estourou ? 413 : 502)
+  }
   const criouRascunho = passos.some((p) => p.ok && p.ferramenta.startsWith('preparar_'))
   return json({
-    resposta, passos, duracao_ms,
+    resposta, passos, duracao_ms, modelo,
+    contexto: { usado: uso, limite: limiteContexto, restante: Math.max(0, limiteContexto - uso), janela_modelo: JANELA_MODELO },
+    reiniciar: estourou || uso >= limiteContexto,
     aviso: criouRascunho ? 'Pedido criado: aguarda aprovação no painel.' : undefined,
   })
 })

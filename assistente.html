@@ -45,6 +45,7 @@
   <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
   <symbol id="i-beer" viewBox="0 0 24 24"><path d="M5 9h11v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M16 11h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M8.5 13v4M12.5 13v4"/><path d="M5 9c-1-2 .5-4 2.5-4 .8-1.4 3.2-1.4 4 0 2 0 3.500 2 2.500 4"/></symbol>
   <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
   <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
@@ -152,6 +153,16 @@
   <section class="cartao assistente" id="assistente" aria-labelledby="t-ass">
     <h2 id="t-ass"><svg class="i"><use href="#i-sparkles"/></svg>Pergunte ao OKTOPAY</h2>
     <p class="sub">Saldo, gastos, show, filas. Pedidos de dinheiro viram rascunho para aprovação.</p>
+
+    <div class="memoria" id="memoria">
+      <div class="mem-topo">
+        <span class="mem-titulo"><svg class="i"><use href="#i-sparkles"/></svg>Memória da conversa<small id="mem-info">Conversa nova</small></span>
+        <button class="btn-limpar" id="limpar" type="button" disabled><svg class="i p"><use href="#i-trash"/></svg>Limpar memória</button>
+      </div>
+      <div class="mem-barra" id="mem-barra" role="progressbar" aria-label="Contexto usado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Contexto ainda não usado"><i id="mem-prog"></i></div>
+      <p class="mem-detalhe" id="mem-detalhe">Contexto: aguardando a primeira resposta.</p>
+    </div>
+    <div class="conversa" id="conversa" aria-live="polite"></div>
 
     <form id="form" autocomplete="off">
       <label for="pergunta" class="sub" style="display:block;margin-top:14px">Sua pergunta (até 500 caracteres)</label>
@@ -447,7 +458,69 @@
     respostaEl.textContent = msg;
   }
 
-  const HISTORICO = []; // últimas mensagens desta conversa (some ao recarregar a página)
+  /* ---------- memória da conversa ---------- */
+  // O servidor não guarda conversa: o navegador mantém o histórico (só texto) e o reenvia a cada pergunta.
+  // A memória some ao recarregar a página, ao clicar em "Limpar memória" ou quando o contexto enche.
+  // O tamanho do contexto (usado / limite) vem da Edge Function, medido pelo campo `usage` da API da Anthropic.
+  const HISTORICO = [];
+  let CTX = null;     // { usado, limite, restante } da última resposta
+  let MODELO = "";    // modelo que respondeu (vem do servidor)
+  let DONO = null;    // id de quem é dono desta memória
+  const conversaEl = document.getElementById("conversa");
+  const limparBtn = document.getElementById("limpar");
+  const memBarra = document.getElementById("mem-barra");
+  const memProg = document.getElementById("mem-prog");
+  const memDetalhe = document.getElementById("mem-detalhe");
+  const memInfo = document.getElementById("mem-info");
+
+  function desenharMemoria() {
+    const n = HISTORICO.length / 2;
+    memInfo.textContent = n === 0 ? "Conversa nova" : n + (n === 1 ? " pergunta lembrada" : " perguntas lembradas");
+    limparBtn.disabled = HISTORICO.length === 0 || document.body.classList.contains("carregando");
+    memBarra.classList.remove("atencao", "cheio");
+    if (!CTX) {
+      memProg.style.width = "0%";
+      memBarra.setAttribute("aria-valuenow", "0");
+      memBarra.setAttribute("aria-valuetext", "Contexto ainda não usado");
+      memDetalhe.textContent = "Contexto: aguardando a primeira resposta.";
+      return;
+    }
+    const pct = Math.min(100, (CTX.usado / CTX.limite) * 100);
+    const pctTxt = CTX.usado > 0 && pct < 1 ? "<1" : String(Math.round(pct));
+    if (pct >= 90) memBarra.classList.add("cheio");
+    else if (pct >= 70) memBarra.classList.add("atencao");
+    memProg.style.width = (Math.round(Math.max(CTX.usado > 0 ? 1 : 0, pct) * 100) / 100) + "%";
+    memBarra.setAttribute("aria-valuenow", String(Math.round(pct)));
+    memBarra.setAttribute("aria-valuetext", pctTxt + "% do contexto usado");
+    memDetalhe.textContent = "Contexto: " + num(CTX.usado) + " de " + num(CTX.limite) + " tokens (" + pctTxt + "%) · restam " +
+      num(CTX.restante) + (MODELO ? " · modelo " + MODELO : "");
+  }
+
+  // Apaga a memória. { manter: true } = reinício automático: deixa a conversa na tela e só avisa.
+  function limparMemoria(opts) {
+    opts = opts || {};
+    HISTORICO.length = 0;
+    CTX = null;
+    if (opts.manter) conversaEl.appendChild(el("div", "conversa-aviso", opts.aviso));
+    else conversaEl.replaceChildren();
+    desenharMemoria();
+  }
+
+  function adicionar(classe, texto) {
+    const d = el("div", "msg " + classe, texto);
+    conversaEl.appendChild(d);
+    if (d.scrollIntoView) d.scrollIntoView({ block: "nearest", behavior: document.documentElement.dataset.mov === "reduzido" ? "auto" : "smooth" });
+    return d;
+  }
+
+  limparBtn.addEventListener("click", () => {
+    if (!HISTORICO.length) return;
+    limparMemoria();
+    respostaEl.className = "resposta";
+    respostaEl.textContent = "Memória limpa. A próxima pergunta começa uma conversa nova.";
+    campo.focus();
+  });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pergunta = campo.value.trim();
@@ -462,11 +535,20 @@
     }
 
     botao.disabled = true;
+    limparBtn.disabled = true;
     document.body.classList.add("carregando");
+    let bolhaEu = null, bolhaIa = null;
     try {
       // O usuário vem do token da sessão (login), nunca do texto da pergunta.
       const { data: { session } } = await sb.auth.getSession();
       if (!session) { pedirLogin(); mostrarErro("Entre na sua conta para perguntar."); return; }
+      // A memória é de uma pessoa só: se a conta mudou, começa do zero.
+      const uid = session.user && session.user.id;
+      if (DONO && uid && DONO !== uid) { limparMemoria(); }
+      DONO = uid || DONO;
+
+      bolhaEu = adicionar("eu", pergunta);
+      bolhaIa = adicionar("ia pensando", "Consultando seus dados…");
       const headers = {
         "Content-Type": "application/json",
         "apikey": SUPABASE_PUBLISHABLE_KEY,
@@ -477,19 +559,31 @@
       const dados = await r.json().catch(() => ({}));
 
       if (!r.ok) {
+        // Pergunta que falhou não entra na memória: tira da tela e mantém o texto no campo para tentar de novo.
+        bolhaEu.remove(); bolhaIa.remove(); bolhaEu = bolhaIa = null;
         mostrarErro(dados.erro || dados.error || "A função respondeu com erro " + r.status + ".");
+        if (dados.reiniciar) limparMemoria({ manter: true, aviso: "Limite de contexto atingido: a memória foi reiniciada. Envie a pergunta de novo." });
         return;
       }
-      respostaEl.innerHTML = mdSeguro(dados.resposta || "");
-      HISTORICO.push({ role: "user", content: pergunta }, { role: "assistant", content: dados.resposta || "" });
-      if (HISTORICO.length > 10) HISTORICO.splice(0, HISTORICO.length - 10);
+      const texto = dados.resposta || "";
+      bolhaIa.className = "msg ia";
+      bolhaIa.innerHTML = mdSeguro(texto);
+      HISTORICO.push({ role: "user", content: pergunta }, { role: "assistant", content: texto });
+      CTX = dados.contexto || null;
+      if (dados.modelo) MODELO = dados.modelo;
+      campo.value = ""; contador.textContent = "0 / 500";
+      if (dados.reiniciar) limparMemoria({ manter: true, aviso: "Limite de contexto atingido: a memória foi reiniciada. A próxima pergunta começa uma conversa nova." });
+      else desenharMemoria();
     } catch (err) {
+      if (bolhaEu) { bolhaEu.remove(); bolhaIa.remove(); }
       mostrarErro("Não foi possível acessar a função. Confira a URL e se ela está publicada.");
     } finally {
       botao.disabled = false;
       document.body.classList.remove("carregando");
+      desenharMemoria();
     }
   });
+  desenharMemoria();
 
   /* ---------- pergunta vinda de outra página (?q=) ---------- */
   try {
