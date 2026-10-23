@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="okto-guard" content="off">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <title>OKTOPAY · Recarga por QR</title>
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem("oktopay-tema"); } catch (e) {}
+      if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+      document.documentElement.dataset.paleta = "oceano";
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="auth">
+  <section class="cartao auth-card" aria-labelledby="t-auth">
+    <div class="auth-marca"><img src="logo.svg" alt="" width="44" height="44"><span>OKTOPAY</span></div>
+    <h2 id="t-auth">Recarga por QR</h2>
+    <p class="sub" id="sub">Carregando…</p>
+    <div class="qr-valor" id="valor" hidden></div>
+    <p class="auth-msg" id="msg" role="alert" aria-live="polite"></p>
+    <button class="btn" type="button" id="btn" hidden>Confirmar recarga</button>
+    <p class="sub" id="nota" hidden>Você não paga nada e não precisa de conta. O pedido só vira saldo depois que a operação aprovar.</p>
+  </section>
+</main>
+<script>
+  const FN = "https://hlwanayvphieizohlltp.supabase.co/functions/v1/qr";
+  const token = new URLSearchParams(location.search).get("t") || "";
+  const $ = (id) => document.getElementById(id);
+  const brl = (n) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const erro = (t) => { $("sub").textContent = ""; $("msg").className = "auth-msg erro"; $("msg").textContent = t; };
+
+  (async () => {
+    if (!token) return erro("QR inválido.");
+    try {
+      const r = await fetch(FN + "?t=" + encodeURIComponent(token));
+      const d = await r.json();
+      if (!r.ok) return erro(d.erro || "Não foi possível abrir este QR.");
+      $("sub").textContent = "Adicionar saldo na carteira de " + d.nome;
+      $("valor").textContent = brl(d.valor); $("valor").hidden = false;
+      $("btn").hidden = false; $("nota").hidden = false;
+      $("btn").addEventListener("click", async () => {
+        $("btn").disabled = true; $("msg").className = "auth-msg"; $("msg").textContent = "Enviando…";
+        try {
+          const r2 = await fetch(FN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "confirmar", token }) });
+          const d2 = await r2.json();
+          if (!r2.ok) { $("btn").disabled = false; return erro(d2.erro || "Não foi possível confirmar."); }
+          $("btn").hidden = true; $("nota").hidden = true;
+          $("sub").textContent = "Tudo certo!";
+          $("msg").className = "auth-msg ok"; $("msg").textContent = d2.aviso;
+        } catch (e) { $("btn").disabled = false; erro("Sem conexão. Tente de novo."); }
+      });
+    } catch (e) { erro("Sem conexão. Tente de novo."); }
+  })();
+</script>
+</body>
+</html>

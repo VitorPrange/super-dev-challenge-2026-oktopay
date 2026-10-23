@@ -989,3 +989,18 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 .folha-corpo { margin: 10px 0 4px; max-height: 55vh; overflow: auto; }
 .folha-corpo .linhas { margin: 6px 0; }
 .etq-n { background: var(--brand-2); color: #fff; }
+
+/* ---------- recarga por QR (pensado para celular) ---------- */
+.campo input { font-size: 16px; } /* 16px evita o zoom automático do iPhone ao focar */
+.rec-opcoes { display: grid; gap: 12px; margin: 14px 0; }
+.rec-op { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 68px; padding: 12px 14px; border-radius: 18px; text-align: left; text-decoration: none;
+  background: var(--well); border: 1.5px solid var(--line); color: var(--ink); cursor: pointer; }
+.rec-op b { display: block; font-size: 16px; }
+.rec-op small { color: var(--muted); font-size: 13px; }
+.rec-op:active { transform: scale(.98); }
+.qr-box { background: #fff; padding: 10px; border-radius: 16px; width: min(100%, 300px); margin: 12px auto; }
+.qr-box svg { display: block; width: 100%; height: auto; }
+.qr-valor { text-align: center; font-size: 26px; font-weight: 800; margin: 6px 0; }
+#sheet-rec .sheet-in { max-height: 92dvh; overflow: auto; }
+#sheet-rec .campo { margin: 12px 0 4px; }
+#sheet-rec .acoes-folha .btn, .auth .btn { min-height: 52px; }

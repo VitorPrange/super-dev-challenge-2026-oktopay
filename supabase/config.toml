@@ -426,3 +426,6 @@ verify_jwt = false    # o painel não faz login no Supabase; a senha é conferid
 
 [functions.carteira]
 verify_jwt = true     # só entra quem está logado; devolve os dados do usuário do token
+
+[functions.qr]
+verify_jwt = false    # quem escaneia não tem conta; o "criar" confere o login dentro da função

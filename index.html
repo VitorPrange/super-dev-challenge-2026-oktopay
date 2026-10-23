@@ -24,6 +24,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -146,6 +147,47 @@
   </div>
 </aside>
 
+<!-- recarregar: escolha entre assistente e QR code -->
+<dialog class="sheet" id="sheet-rec" aria-labelledby="rec-t">
+  <div class="sheet-in">
+    <div class="sheet-alca" aria-hidden="true"></div>
+    <div id="rec-escolha">
+      <h3 id="rec-t">Como quer recarregar?</h3>
+      <div class="rec-opcoes">
+        <a class="rec-op" href="assistente.html?q=Recarrega%20R%24%20100%20no%20meu%20cart%C3%A3o%20pelo%20pix%20agora">
+          <span class="ico-t"><svg class="i g"><use href="#i-sparkles"/></svg></span>
+          <span><b>Assistente</b><small>Peça a recarga por conversa</small></span>
+        </a>
+        <button class="rec-op" type="button" id="rec-qr">
+          <span class="ico-t"><svg class="i g"><use href="#i-grid"/></svg></span>
+          <span><b>QR code</b><small>Alguém escaneia e adiciona o valor</small></span>
+        </button>
+      </div>
+    </div>
+    <div id="rec-form" hidden>
+      <h3>Gerar QR code</h3>
+      <p class="sub">Defina o valor. Quem escanear não paga nada: o pedido vai para aprovação da operação.</p>
+      <label class="campo">Valor (R$)<input type="text" id="rec-valor" inputmode="decimal" autocomplete="off" placeholder="Ex.: 50,00"></label>
+      <p class="auth-msg" id="rec-msg" role="alert" aria-live="polite"></p>
+      <div class="acoes-folha">
+        <button class="btn" type="button" id="rec-gerar">Gerar QR</button>
+        <button class="btn fantasma" type="button" id="rec-voltar">Voltar</button>
+      </div>
+    </div>
+    <div id="rec-qr-ok" hidden>
+      <h3>Mostre este QR</h3>
+      <div class="qr-box" id="qr-box"></div>
+      <p class="qr-valor" id="qr-valor"></p>
+      <p class="sub" id="qr-info"></p>
+      <div class="acoes-folha">
+        <button class="btn" type="button" id="qr-copiar">Copiar link</button>
+        <button class="btn fantasma" type="button" id="qr-novo">Gerar outro valor</button>
+      </div>
+    </div>
+    <div class="acoes-folha"><button class="btn fantasma" type="button" id="rec-fechar">Fechar</button></div>
+  </div>
+</dialog>
+
 <main class="pagina">
   <p class="aviso-fixo"><svg class="i"><use href="#i-shield"/></svg>Apoio à decisão. Nenhuma ação sai sem aprovação humana.</p>
 
@@ -172,7 +214,7 @@
           <a class="chip-pts" id="chip-pts" href="premios.html"><svg class="i p"><use href="#i-star"/></svg><span>… pts</span></a>
         </div>
         <div class="acoes">
-          <a class="btn" href="assistente.html?q=Recarrega%20R%24%20100%20no%20meu%20cart%C3%A3o%20pelo%20pix%20agora"><svg class="i p"><use href="#i-plus"/></svg>Recarregar</a>
+          <button class="btn" type="button" id="btn-recarregar"><svg class="i p"><use href="#i-plus"/></svg>Recarregar</button>
           <a class="btn claro" href="assistente.html?q=Posso%20sacar%20R%24%2050%20agora%3F"><svg class="i p"><use href="#i-up-right"/></svg>Sacar</a>
         </div>
         <p class="dica"><svg class="i p"><use href="#i-zap"/></svg>Recarga PIX a partir de R$ 50 rende +20 pontos.</p>
@@ -492,6 +534,50 @@
   try { guardado = localStorage.getItem("oktopay-oculto") === "1"; } catch (e) {}
   aplicarOculto(guardado);
   olho.addEventListener("click", () => aplicarOculto(!cartaoSaldo.classList.contains("oculto")));
+
+  /* ---------- Recarregar: assistente ou QR code ---------- */
+  (function () {
+    const dlg = document.getElementById("sheet-rec");
+    const $ = (id) => document.getElementById(id);
+    const passos = ["rec-escolha", "rec-form", "rec-qr-ok"];
+    const ir = (id) => passos.forEach((p) => ($(p).hidden = p !== id));
+    let link = "";
+    $("btn-recarregar").addEventListener("click", () => { ir("rec-escolha"); dlg.showModal(); });
+    $("rec-fechar").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+    $("rec-qr").addEventListener("click", () => { ir("rec-form"); $("rec-msg").textContent = ""; setTimeout(() => $("rec-valor").focus(), 50); });
+    $("rec-voltar").addEventListener("click", () => ir("rec-escolha"));
+    $("qr-novo").addEventListener("click", () => { $("rec-valor").value = ""; ir("rec-form"); setTimeout(() => $("rec-valor").focus(), 50); });
+
+    function erro(t) { $("rec-msg").className = "auth-msg erro"; $("rec-msg").textContent = t; }
+    async function gerar() {
+      const valor = parseFloat($("rec-valor").value.replace(/\./g, "").replace(",", "."));
+      if (!(valor > 0)) return erro("Informe um valor maior que zero.");
+      if (valor > 1000) return erro("O valor máximo é R$ 1.000,00.");
+      if (!window.qrcode) return erro("Não consegui carregar o gerador de QR. Confira a internet.");
+      const btn = $("rec-gerar"); btn.disabled = true; $("rec-msg").className = "auth-msg"; $("rec-msg").textContent = "Gerando…";
+      try {
+        const s = await OKTO.sessao();
+        const r = await fetch(OKTO.FN + "qr", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + s.access_token },
+                                                 body: JSON.stringify({ acao: "criar", valor }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.erro || "Erro " + r.status);
+        link = new URL("pagar.html?t=" + encodeURIComponent(d.token), location.href).href;
+        const q = qrcode(0, "M"); q.addData(link); q.make();
+        $("qr-box").innerHTML = q.createSvgTag(6, 4);
+        $("qr-valor").textContent = brl(d.valor);
+        $("qr-info").textContent = "Vale por 1 hora e até 3 leituras. Quem escanear só confirma, sem pagar.";
+        $("rec-msg").textContent = ""; ir("rec-qr-ok");
+      } catch (e) { erro(e.message || "Não foi possível gerar o QR."); }
+      btn.disabled = false;
+    }
+    $("rec-gerar").addEventListener("click", gerar);
+    $("rec-valor").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); gerar(); } });
+    $("qr-copiar").addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(link); $("qr-info").textContent = "Link copiado!"; }
+      catch (e) { $("qr-info").textContent = link; }
+    });
+  })();
 </script>
 </body>
 </html>
