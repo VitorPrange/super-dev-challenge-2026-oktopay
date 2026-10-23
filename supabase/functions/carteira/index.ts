@@ -68,14 +68,13 @@ Deno.serve(async (req: Request) => {
         .eq('usuario_id', uid).eq('status', 'confirmada')
         .order('criado_em', { ascending: false }).limit(500),
       db.from('ok_categorias').select('nome, ordem').order('ordem'),
-      db.from('ok_rascunhos').select('payload, status, criado_em').eq('usuario_id', uid).eq('tipo', 'premio').in('status', ['aguardando_aprovacao', 'aprovado']).order('criado_em', { ascending: false }).limit(500),
+      db.from('ok_rascunhos').select('payload, status, criado_em').eq('usuario_id', uid).eq('tipo', 'premio').eq('status', 'aprovado').order('criado_em', { ascending: false }).limit(500),
     ])
     for (const r of [saldoR, resumoR, txR, comprasR, catsR, resgatesR]) if (r.error) throw new Error(r.error.message)
 
     const saldo = saldoR.data?.[0] ?? { saldo: 0, creditos: 0, debitos: 0, saldo_pendente: 0 }
     const resumo = resumoR.data?.[0] ?? { total_gasto: 0, saldo_atual: saldo.saldo, quantidade_compras: 0, gasto_medio_por_compra: 0 }
-    // Pontos reservados em pedidos pendentes e pontos já consumidos em prêmios aprovados.
-    // Pedidos recusados não entram nesta soma, portanto os pontos são liberados.
+    // Somente prêmios aprovados consomem pontos. Pedidos pendentes ou recusados não alteram o saldo.
     const resgates = resgatesR.data ?? []
     const pontos_resgatados = resgates.reduce((total: number, r: any) => total + Math.max(0, Number(r.payload?.custo_pontos) || 0), 0)
 

@@ -61,16 +61,16 @@ Deno.serve(async (req: Request) => {
   if (exError) return json({ erro: exError.message }, 500)
   if ((existentes ?? []).some((r: { payload: { premio_id?: string }; status: string }) => r.status === 'aguardando_aprovacao' && r.payload?.premio_id === id))
     return json({ erro: 'Você já tem um pedido deste prêmio aguardando aprovação.' }, 409)
-  const pontosReservados = (existentes ?? []).reduce((total: number, r: { payload: { custo_pontos?: number } }) =>
+  const pontosConsumidos = (existentes ?? []).filter((r: { status: string }) => r.status === 'aprovado').reduce((total: number, r: { payload: { custo_pontos?: number } }) =>
     total + Math.max(0, Number(r.payload?.custo_pontos) || 0), 0)
-  const saldoPontos = pontosGanhos - pontosReservados
+  const saldoPontos = pontosGanhos - pontosConsumidos
   if (saldoPontos < premio.custo) return json({ erro: `Pontos insuficientes. Saldo disponível: ${saldoPontos} pts.` }, 400)
 
   const payload = { premio_id: id, premio_nome: premio.nome, custo_pontos: premio.custo, ...(artista ? { artista } : {}) }
   const { data, error } = await db.from('ok_rascunhos').insert({
     usuario_id: userId, tipo: 'premio', valor: null, payload,
     justificativa: `Resgate de prêmio: ${premio.nome} (${premio.custo} pontos)`,
-    evidencias: [{ origem: 'pagina de premios', pontos_disponiveis: saldoPontos, ...(artista ? { artista } : {}) }],
+    evidencias: [{ origem: 'pagina de premios', pontos_disponiveis_no_pedido: saldoPontos, observacao: 'Os pontos só serão consumidos após aprovação.', ...(artista ? { artista } : {}) }],
     status: 'aguardando_aprovacao',
   }).select('id, status').single()
   if (error) return json({ erro: error.message }, 500)
