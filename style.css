@@ -354,9 +354,13 @@ button, input, textarea { font: inherit; color: inherit; }
 .resposta {
   margin-top: 18px; padding: 16px 18px; border-radius: 16px;
   background: var(--well); border: 1px solid var(--line); border-left: 5px solid var(--brand);
-  white-space: pre-wrap; font-size: 15px; animation: subir .4s ease both;
+  font-size: 15px; animation: subir .4s ease both;
 }
 .resposta:empty { display: none; }
+.resposta p { margin: 0 0 10px; }
+.resposta p:last-child, .resposta ul:last-child { margin-bottom: 0; }
+.resposta ul { margin: 0 0 10px; padding-left: 20px; }
+.resposta li { margin-bottom: 4px; }
 .resposta.erro { background: var(--err-soft); color: var(--err); border-color: transparent; border-left-color: var(--err); }
 
 .passos { margin-top: 16px; }

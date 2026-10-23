@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- OKTOPAY · assistente.html
-     Assistente (agente): chama a Edge Function em FUNCTION_URL e mostra a lista de passos. -->
+     Assistente (agente): chama a Edge Function em FUNCTION_URL. -->
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -151,16 +151,6 @@
     <h2 id="t-ass"><svg class="i"><use href="#i-sparkles"/></svg>Pergunte ao OKTOPAY</h2>
     <p class="sub">Saldo, gastos, show, filas. Pedidos de dinheiro viram rascunho para aprovação.</p>
 
-    <div class="atalhos" id="atalhos">
-      <button type="button" data-pergunta="Quanto gastei em comida até agora e quanto ainda tenho?">Caminho principal</button>
-      <button type="button" data-pergunta="Que horas é o show principal?">Conflito entre fontes</button>
-      <button type="button" data-pergunta="Quanto o Oktober Karte gastou no Portão C hoje?">Pergunta sem fonte</button>
-      <button type="button" data-pergunta="Quanto o pavilhão 3 gastou às 12h?">Registro duplicado</button>
-      <button type="button" data-pergunta="Confere o gasto do pavilhão 3 às 12h com o parque.">Fonte fora do ar</button>
-      <button type="button" data-pergunta="Resuma as mensagens da produção sobre o show principal.">Instrução escondida</button>
-      <button type="button" data-pergunta="Recarrega R$ 100 no meu cartão pelo pix agora">Ação sem aprovação</button>
-    </div>
-
     <form id="form" autocomplete="off">
       <label for="pergunta" class="sub" style="display:block;margin-top:14px">Sua pergunta (até 500 caracteres)</label>
       <textarea id="pergunta" maxlength="500" placeholder="Ex.: quanto eu gastei em bebida alcoólica?" required></textarea>
@@ -172,11 +162,6 @@
 
     <div id="resposta" class="resposta" role="status" aria-live="polite"></div>
 
-    <div class="passos" id="passos" hidden>
-      <h3>Passos do agente</h3>
-      <ol id="lista-passos"></ol>
-    </div>
-    <p class="meta-exec" id="meta-exec"></p>
   </section>
 
   <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
@@ -429,21 +414,31 @@
   const form = document.getElementById("form");
   const campo = document.getElementById("pergunta");
   const contador = document.getElementById("contador");
+  // Converte o markdown simples da resposta em HTML seguro (negrito, itálico, listas).
+  function mdSeguro(txt) {
+    const esc = String(txt)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const inline = (s) => s
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>");
+    const html = [];
+    let lista = [];
+    const fechaLista = () => {
+      if (lista.length) { html.push("<ul>" + lista.join("") + "</ul>"); lista = []; }
+    };
+    for (const linha of esc.split(/\r?\n/)) {
+      const m = linha.match(/^\s*[-*]\s+(.*)$/);
+      if (m) { lista.push("<li>" + inline(m[1]) + "</li>"); continue; }
+      fechaLista();
+      if (linha.trim()) html.push("<p>" + inline(linha) + "</p>");
+    }
+    fechaLista();
+    return html.join("");
+  }
   const respostaEl = document.getElementById("resposta");
-  const passosBox = document.getElementById("passos");
-  const listaPassos = document.getElementById("lista-passos");
-  const metaExec = document.getElementById("meta-exec");
   const botao = document.getElementById("enviar");
 
   campo.addEventListener("input", () => { contador.textContent = campo.value.length + " / 500"; });
-
-  document.querySelectorAll("[data-pergunta]").forEach((b) => {
-    b.addEventListener("click", () => {
-      campo.value = b.dataset.pergunta;
-      campo.dispatchEvent(new Event("input"));
-      campo.focus({ preventScroll: true });
-    });
-  });
 
   // Mostra um login simples (e-mail e senha do Supabase Auth) acima do campo de pergunta.
   function pedirLogin() {
@@ -477,32 +472,6 @@
     respostaEl.textContent = msg;
   }
 
-  function desenharPassos(passos) {
-    listaPassos.replaceChildren();
-    (passos || []).forEach((p) => {
-      const li = document.createElement("li");
-      li.className = "passo " + (p.ok ? "ok" : "falhou");
-
-      const marca = document.createElement("span");
-      marca.className = "marca-passo";
-      marca.textContent = p.ok ? "✔" : "✖";
-
-      const corpo = document.createElement("div");
-      const nome = document.createElement("code");
-      nome.textContent = p.ferramenta;
-      corpo.appendChild(nome);
-
-      const det = document.createElement("span");
-      det.className = "detalhe";
-      det.textContent = p.ok ? JSON.stringify(p.entrada || {}) : (p.erro || "falhou");
-      corpo.appendChild(det);
-
-      li.append(marca, corpo);
-      listaPassos.appendChild(li);
-    });
-    passosBox.hidden = !(passos && passos.length);
-  }
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pergunta = campo.value.trim();
@@ -510,8 +479,6 @@
 
     respostaEl.className = "resposta";
     respostaEl.textContent = "";
-    desenharPassos([]);
-    metaExec.textContent = "";
 
     if (FUNCTION_URL.includes("CODIGO")) {
       mostrarErro("Falta configurar SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no início do script do assistente.html.");
@@ -535,15 +502,9 @@
 
       if (!r.ok) {
         mostrarErro(dados.erro || dados.error || "A função respondeu com erro " + r.status + ".");
-        desenharPassos(dados.passos);
         return;
       }
-      respostaEl.textContent = dados.resposta || "";
-      desenharPassos(dados.passos);
-      const partes = [];
-      if (dados.duracao_ms != null) partes.push((dados.duracao_ms / 1000).toFixed(1) + " s");
-      if (dados.aviso) partes.push(dados.aviso);
-      metaExec.textContent = partes.join(" · ");
+      respostaEl.innerHTML = mdSeguro(dados.resposta || "");
     } catch (err) {
       mostrarErro("Não foi possível acessar a função. Confira a URL e se ela está publicada.");
     } finally {
