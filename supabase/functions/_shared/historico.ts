@@ -46,7 +46,12 @@ export function limparHistorico(bruto: unknown, limiteTokens: number): Mensagem[
     const ultimo = hist[hist.length - 1]
     if (hist.length === 0 && m.role !== 'user') continue
     if (ultimo && ultimo.role === m.role) continue
-    hist.push({ role: m.role, content: m.content.slice(0, MAX_CHARS_MENSAGEM) })
+    // Respostas anteriores não são evidência. Mantém só um marcador para preservar a alternância
+    // e o contexto conversacional sem reaproveitar como fato um valor que o modelo possa ter inventado.
+    const content = m.role === 'assistant'
+      ? '[Resposta anterior omitida. Consulte o banco nesta requisição; não reutilize fatos antigos.]'
+      : m.content.slice(0, MAX_CHARS_MENSAGEM)
+    hist.push({ role: m.role, content })
   }
   if (hist.length && hist[hist.length - 1].role === 'user') hist.pop()
 
