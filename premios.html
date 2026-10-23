@@ -502,7 +502,23 @@
     { id: "camarim",   nome: "Camarim à escolha do artista",      cat: "Experiência", grupo: "ex", custo: 10000, ic: "mic", max: true, escolha: true },
   ];
   const MAX = PREMIOS.find((p) => p.max);
-  const pedidos = new Set(); // resgates "enviados" nesta visita (só na memória)
+  const pedidos = new Set();
+  const premiosAprovados = new Set();
+  let sessaoPremios = null;
+  try {
+    sessaoPremios = await OKTO.sessao();
+    if (sessaoPremios) {
+      const r = await fetch(OKTO.FN + "resgatar-premio", {
+        headers: { apikey: OKTO.SUPABASE_PUBLISHABLE_KEY, Authorization: "Bearer " + sessaoPremios.access_token }
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) (d.pedidos || []).forEach((p) => {
+        const id = p.payload && p.payload.premio_id;
+        if (id && p.status === "aguardando_aprovacao") pedidos.add(id);
+        if (id && p.status === "aprovado") premiosAprovados.add(id);
+      });
+    }
+  } catch (err) { console.error("Não foi possível carregar os resgates existentes.", err); }
 
   /* ============ card de pontos ============ */
   const ganhos = TRANSACOES.filter((t) => pontosDe(t) > 0).reduce((s, t) => s + pontosDe(t), 0);
@@ -648,7 +664,7 @@
   document.getElementById("sh-cancelar").addEventListener("click", fechar);
   folha.addEventListener("click", (e) => { if (e.target === folha) fechar(); }); // toque fora fecha
 
-  document.getElementById("sheet-form").addEventListener("submit", (e) => {
+  document.getElementById("sheet-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!alvo) return;
     const artista = campoArtista.value.trim();
@@ -657,11 +673,30 @@
       campoArtista.focus();
       return;
     }
-    pedidos.add(alvo.id);
-    fechar();
-    avisar("Pedido de “" + alvo.nome + "” (" + num(alvo.custo) + " pts) registrado como rascunho, aguardando aprovação." + (alvo.escolha ? " Artista: " + artista + "." : "") + " Demonstração: nada foi gravado.");
-    atualizarTabela();
-    atualizarMax();
+    const confirmar = document.getElementById("sh-ok");
+    confirmar.disabled = true;
+    erroCampo.textContent = "";
+    try {
+      const sessao = await OKTO.sessao();
+      if (!sessao) throw new Error("Entre na sua conta para resgatar um prêmio.");
+      const r = await fetch(OKTO.FN + "resgatar-premio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: OKTO.SUPABASE_PUBLISHABLE_KEY, Authorization: "Bearer " + sessao.access_token },
+        body: JSON.stringify({ premio_id: alvo.id, artista })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.erro || "Não foi possível registrar o resgate.");
+      pedidos.add(alvo.id);
+      fechar();
+      avisar("Pedido de “" + alvo.nome + "” (" + num(alvo.custo) + " pts) enviado para aprovação no painel." + (alvo.escolha ? " Artista: " + artista + "." : ""));
+      atualizarTabela();
+      atualizarMax();
+    } catch (err) {
+      erroCampo.textContent = err.message || "Erro ao enviar o resgate.";
+      avisar(err.message || "Erro ao enviar o resgate.");
+    } finally {
+      confirmar.disabled = false;
+    }
   });
 
   /* ============ abas (Prêmios / Histórico / Como ganhar) ============ */

@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'GET') {
     const { data: rascunhos, error: e1 } = await db
       .from('ok_rascunhos')
-      .select('id, tipo, valor, status, justificativa, evidencias, criado_em')
+      .select('id, tipo, valor, payload, status, justificativa, evidencias, criado_em')
       .order('criado_em', { ascending: false }).limit(50)
     if (e1) return json({ erro: e1.message }, 500)
     const { data: execucoes, error: e2 } = await db

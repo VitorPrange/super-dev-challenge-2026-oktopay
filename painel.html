@@ -327,13 +327,19 @@
 
       const topo = document.createElement("div");
       topo.className = "rasc-topo";
-      topo.append(texto("span", "tipo", r.tipo), texto("span", "valor", brl(r.valor)));
+      const ehPremio = r.tipo === "premio";
+      const payload = r.payload || {};
+      topo.append(
+        texto("span", "tipo", ehPremio ? "Resgate de prêmio" : r.tipo),
+        texto("span", "valor", ehPremio ? String(payload.custo_pontos || 0) + " pts" : brl(r.valor))
+      );
 
       const selo = texto("span", "selo " + r.status, r.status.replace("_", " "));
 
       card.append(topo, selo);
-      card.appendChild(texto("p", "just", r.justificativa || "Sem justificativa."));
-      card.appendChild(texto("p", "ev", "Evidências: " + JSON.stringify(r.evidencias || []) + " · criado em " + quando(r.criado_em)));
+      card.appendChild(texto("p", "just", (r.justificativa || "Sem justificativa.") +
+        (ehPremio && payload.artista ? " · Artista solicitado: " + payload.artista : "")));
+      card.appendChild(texto("p", "ev", (ehPremio ? "Prêmio: " + (payload.premio_nome || "—") + " · " : "Evidências: " + JSON.stringify(r.evidencias || []) + " · ") + "criado em " + quando(r.criado_em)));
 
       if (r.status === "aguardando_aprovacao") {
         const botoes = document.createElement("div");

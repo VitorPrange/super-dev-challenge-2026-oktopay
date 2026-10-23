@@ -425,6 +425,12 @@
   const botao = document.getElementById("enviar");
 
   campo.addEventListener("input", () => { contador.textContent = campo.value.length + " / 500"; });
+  campo.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      if (!botao.disabled) form.requestSubmit();
+    }
+  });
 
   // Mostra um login simples (e-mail e senha do Supabase Auth) acima do campo de pergunta.
   function pedirLogin() {
@@ -524,7 +530,10 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pergunta = campo.value.trim();
-    if (!pergunta) return;
+    if (!pergunta || botao.disabled) return;
+    // Limpa imediatamente ao enviar, tanto pelo botão quanto por Enter.
+    campo.value = "";
+    contador.textContent = "0 / 500";
 
     respostaEl.className = "resposta";
     respostaEl.textContent = "";
@@ -571,7 +580,6 @@
       HISTORICO.push({ role: "user", content: pergunta }, { role: "assistant", content: texto });
       CTX = dados.contexto || null;
       if (dados.modelo) MODELO = dados.modelo;
-      campo.value = ""; contador.textContent = "0 / 500";
       if (dados.reiniciar) limparMemoria({ manter: true, aviso: "Limite de contexto atingido: a memória foi reiniciada. A próxima pergunta começa uma conversa nova." });
       else desenharMemoria();
     } catch (err) {

@@ -1,0 +1,18 @@
+AJUSTES DE RESGATE DE PRÊMIOS E ENVIO DO ASSISTENTE
+====================================================
+
+1. Supabase > SQL Editor: execute resgates_premios_migracao.sql no projeto existente.
+   Se estiver criando o banco do zero com o oktopay_completo.sql atualizado, essa migração
+   não é necessária.
+2. Publique a nova Edge Function:
+   supabase functions deploy resgatar-premio
+   Ela usa os secrets/configuração já usados pelas funções carteira e agente.
+3. Publique novamente a Edge Function painel para que a lista inclua o payload do prêmio:
+   supabase functions deploy painel
+4. Em premios.html, o resgate agora grava um registro em ok_rascunhos e o painel exibe
+   o nome do prêmio, os pontos e o artista solicitado (quando houver). A aprovação do
+   prêmio só muda o estado do pedido; não movimenta dinheiro.
+5. No assistente, Enter envia a pergunta; Shift+Enter insere uma quebra de linha. O campo
+   é limpo ao enviar pelo botão ou por Enter.
+
+Observação: os pontos são calculados no servidor a partir das transações registradas.
