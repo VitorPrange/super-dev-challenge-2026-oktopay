@@ -447,6 +447,7 @@
     respostaEl.textContent = msg;
   }
 
+  const HISTORICO = []; // últimas mensagens desta conversa (some ao recarregar a página)
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pergunta = campo.value.trim();
@@ -472,7 +473,7 @@
         "Authorization": "Bearer " + session.access_token,
       };
 
-      const r = await fetch(FUNCTION_URL, { method: "POST", headers, body: JSON.stringify({ pergunta }) });
+      const r = await fetch(FUNCTION_URL, { method: "POST", headers, body: JSON.stringify({ pergunta, historico: HISTORICO }) });
       const dados = await r.json().catch(() => ({}));
 
       if (!r.ok) {
@@ -480,6 +481,8 @@
         return;
       }
       respostaEl.innerHTML = mdSeguro(dados.resposta || "");
+      HISTORICO.push({ role: "user", content: pergunta }, { role: "assistant", content: dados.resposta || "" });
+      if (HISTORICO.length > 10) HISTORICO.splice(0, HISTORICO.length - 10);
     } catch (err) {
       mostrarErro("Não foi possível acessar a função. Confira a URL e se ela está publicada.");
     } finally {
