@@ -182,11 +182,18 @@
   <p class="rodape">OktoberVerse · Super Dev Challenge 2026 · todos os dados são fictícios e simulados</p>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Troque pelo código do seu projeto Supabase e pelo nome da função do agente.
-  const FUNCTION_URL = "https://CODIGO.supabase.co/functions/v1/NOME-DA-FUNCAO";
-  // Token do visitante logado (Supabase Auth). A função usa o usuário DESTE token, nunca o do texto.
-  let TOKEN_DO_VISITANTE = "";
+  // ===== CONFIGURE AQUI (2 valores) =====
+  // Supabase > Project Settings > API: "Project URL" e a chave PUBLISHABLE (pode ficar no front).
+  // NUNCA coloque aqui a chave secret nem a chave da Anthropic.
+  const SUPABASE_URL = "https://hlwanayvphieizohlltp.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lhOJBOCStuNW5v1UT2XbDw__4uHlO6W";
+  const FUNCTION_URL = SUPABASE_URL + "/functions/v1/agente";
+  // Cliente do Supabase: cuida do login e renova a sessão sozinho.
+  const sb = (window.supabase && !SUPABASE_URL.includes("CODIGO"))
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+    : null;
 
   /* ============ dados de exemplo (usuário de teste, 06_SIMULACAO.sql) ============ */
   // Mais recente primeiro. v = valor em reais.
@@ -438,6 +445,33 @@
     });
   });
 
+  // Mostra um login simples (e-mail e senha do Supabase Auth) acima do campo de pergunta.
+  function pedirLogin() {
+    if (document.getElementById("login-ok")) return;
+    const f = document.createElement("form");
+    f.id = "login-ok";
+    f.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px";
+    const email = document.createElement("input");
+    email.type = "email"; email.placeholder = "e-mail"; email.required = true; email.autocomplete = "username";
+    const senha = document.createElement("input");
+    senha.type = "password"; senha.placeholder = "senha"; senha.required = true; senha.autocomplete = "current-password";
+    [email, senha].forEach((i) => (i.style.cssText = "flex:1;min-width:140px;padding:10px;border-radius:8px;border:1px solid #888;font:inherit"));
+    const b = document.createElement("button");
+    b.className = "btn"; b.type = "submit"; b.textContent = "Entrar";
+    f.append(email, senha, b);
+    f.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      b.disabled = true;
+      const { error } = await sb.auth.signInWithPassword({ email: email.value, password: senha.value });
+      b.disabled = false;
+      if (error) { mostrarErro("Não foi possível entrar: " + error.message); return; }
+      f.remove();
+      respostaEl.className = "resposta";
+      respostaEl.textContent = "Conectado. Agora é só perguntar.";
+    });
+    document.getElementById("form").before(f);
+  }
+
   function mostrarErro(msg) {
     respostaEl.className = "resposta erro";
     respostaEl.textContent = msg;
@@ -480,15 +514,21 @@
     metaExec.textContent = "";
 
     if (FUNCTION_URL.includes("CODIGO")) {
-      mostrarErro("Falta configurar FUNCTION_URL no index.html com a URL da sua Edge Function.");
+      mostrarErro("Falta configurar SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no início do script do assistente.html.");
       return;
     }
 
     botao.disabled = true;
     document.body.classList.add("carregando");
     try {
-      const headers = { "Content-Type": "application/json" };
-      if (TOKEN_DO_VISITANTE) headers["Authorization"] = "Bearer " + TOKEN_DO_VISITANTE;
+      // O usuário vem do token da sessão (login), nunca do texto da pergunta.
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { pedirLogin(); mostrarErro("Entre na sua conta para perguntar."); return; }
+      const headers = {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + session.access_token,
+      };
 
       const r = await fetch(FUNCTION_URL, { method: "POST", headers, body: JSON.stringify({ pergunta }) });
       const dados = await r.json().catch(() => ({}));

@@ -1,0 +1,7 @@
+.env
+*.env
+supabase/.env
+supabase/.temp/
+supabase/.temp
+node_modules/
+*.sql
